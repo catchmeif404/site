@@ -18,12 +18,18 @@ Then open http://localhost:8080.
 ```text
 index.html   # the whole page
 style.css    # tokens + layout
-script.js    # redaction-bar easter egg, tip form -> mailto
+script.js    # redaction-bar easter egg, tip form -> mailto, Field reports fetch
 ```
+
+`script.js` fetches `catchmeif404-admin`'s public `GET /api/public/field-reports` (published
+announcements + actual GitHub release history, merged) client-side to populate "Field reports" —
+fails silently into the static "No reports filed yet" placeholder if that's unreachable, so the
+page never breaks on it.
 
 ## Deploy
 
-Static site, deployed via Cloudflare Pages. Pushing to `main` redeploys.
+Static site, deployed via Cloudflare Pages (git integration — pushing to `main` redeploys, no
+build command/output directory needed).
 
 ---
 
