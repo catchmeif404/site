@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>catchmeif404 — case file</title>
+  <meta name="description" content="Case file on an anonymous developer. Evidence, field reports, and a tip line.">
+
+  <meta property="og:title" content="catchmeif404 — case file">
+  <meta property="og:description" content="Case file on an anonymous developer. Evidence, field reports, and a tip line.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://catchmeif404.com">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23141210'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='22' fill='%23E8DCC3' text-anchor='middle'%3E404%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="sheet">
+    <div class="tab">Case file</div>
+
+    <header class="cover">
+      <div class="cover-top">
+        <span class="ref">Ref. 0000-404</span>
+        <span class="tag-open">Status: Open</span>
+      </div>
+
+      <p class="field-label">Subject</p>
+      <button type="button" class="redacted" title="nice try" aria-label="Redacted">
+        <span class="visually-hidden">Redacted</span>
+        <span class="bar bar-1" aria-hidden="true"></span>
+        <span class="bar bar-2" aria-hidden="true"></span>
+      </button>
+
+      <p class="alias">Goes by <strong>catchmeif404</strong>.</p>
+
+      <div class="stamp" aria-hidden="true">Still at large</div>
+
+      <p class="bio">
+        Ships small tools nobody asked for. Confirmed sightings on GitHub
+        and at least one inbox. Motive unclear. Last seen debugging a NAT
+        Gateway bill at 2&nbsp;a.m.
+      </p>
+
+      <a class="see-evidence" href="#evidence">See what's been found</a>
+    </header>
+
+    <hr class="tear" aria-hidden="true">
+
+    <section id="evidence" class="section">
+      <p class="field-label">Evidence on file — 2 items logged</p>
+
+      <div class="exhibits">
+        <article class="exhibit" style="--rot:-2deg">
+          <span class="exhibit-tag">Exhibit A</span>
+          <h3>AWS Cost Calculator</h3>
+          <p>Guesses your AWS bill before AWS tells you. Rule-based, no
+            surprises.</p>
+          <a href="https://github.com/catchmeif404/aws-cost-calculator">Open
+            file</a>
+        </article>
+
+        <article class="exhibit" style="--rot:1.5deg">
+          <span class="exhibit-tag">Exhibit B</span>
+          <h3>DevWrapped</h3>
+          <p>Runs your GitHub activity through evidence processing. Tells
+            you what kind of developer you are.</p>
+          <a href="https://github.com/catchmeif404/devwrapped">Open file</a>
+        </article>
+
+        <article class="exhibit exhibit--sealed" style="--rot:-1deg">
+          <span class="exhibit-tag">Exhibit C</span>
+          <h3>Classified</h3>
+          <p>Pending release.</p>
+        </article>
+      </div>
+    </section>
+
+    <hr class="tear" aria-hidden="true">
+
+    <section class="section">
+      <p class="field-label">Field reports</p>
+      <p class="empty-note">No reports filed yet. Check back.</p>
+    </section>
+
+    <hr class="tear" aria-hidden="true">
+
+    <section id="tip" class="section">
+      <p class="field-label">Submit a tip</p>
+      <p class="tip-copy">Think you know who's behind this? Leave a
+        message. No promises it gets answered.</p>
+
+      <form id="tip-form" novalidate>
+        <label>
+          <span>Name <span class="opt">(optional)</span></span>
+          <input type="text" name="name" autocomplete="name">
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>
+          <span>Message</span>
+          <textarea name="message" rows="4" required></textarea>
+        </label>
+        <button type="submit">File report</button>
+        <p class="tip-hint">Opens your email app — nothing sends
+          automatically.</p>
+      </form>
+      <p id="tip-status" role="status"></p>
+    </section>
+
+    <footer class="foot">
+      <p>You found the file. You didn't find me.</p>
+      <p class="links">
+        <a href="https://github.com/catchmeif404">GitHub</a>
+        <a href="mailto:hello@catchmeif404.com">Email</a>
+      </p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+/* ---- tokens ---- */
+:root {
+  --desk: #2e2a22;
+  --paper: #e8dcc3;
+  --paper-card: #f1e9d2;
+  --ink: #241f1a;
+  --ink-muted: #6b5c46;
+  --redaction: #141210;
+  --stamp: #a32b2b;
+  --gold: #8a6d1f;
+
+  --serif-stamp: "Special Elite", "Courier New", monospace;
+  --mono: "Courier Prime", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: light; }
+
+body {
+  margin: 0;
+  background: var(--desk);
+  background-image:
+    radial-gradient(ellipse at top, rgba(255,255,255,0.04), transparent 60%);
+  color: var(--ink);
+  font-family: var(--mono);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+a { color: var(--gold); text-decoration-thickness: 1px; }
+a:hover { color: var(--stamp); }
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+/* ---- the sheet ---- */
+.sheet {
+  position: relative;
+  max-width: 46rem;
+  margin: 4rem auto 6rem;
+  padding: 3rem clamp(1.25rem, 4vw, 3.5rem) 3.5rem;
+  background: var(--paper);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.45), 0 2px 0 rgba(0,0,0,0.2);
+}
+
+.tab {
+  position: absolute;
+  top: -1.6rem;
+  left: 2rem;
+  background: var(--paper);
+  padding: 0.4rem 1.1rem 0.6rem;
+  font-family: var(--serif-stamp);
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  transform: rotate(-1.5deg);
+  box-shadow: 0 -2px 0 rgba(0,0,0,0.05) inset;
+}
+
+/* ---- cover / hero ---- */
+.cover-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  border-bottom: 1px solid rgba(36,31,26,0.25);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin: 0 0 0.5rem;
+}
+
+.redacted {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.bar {
+  display: block;
+  height: clamp(2.1rem, 6vw, 3.25rem);
+  background: var(--redaction);
+  border-radius: 1px;
+}
+.bar-1 { width: clamp(6rem, 24vw, 11rem); }
+.bar-2 { width: clamp(4rem, 16vw, 7rem); }
+
+.redacted.shake .bar { animation: shake 0.4s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px) rotate(-1deg); }
+  40% { transform: translateX(4px) rotate(1deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.alias {
+  font-size: 1.1rem;
+  margin: 0 0 1.5rem;
+}
+.alias strong {
+  font-family: var(--serif-stamp);
+  font-weight: 400;
+}
+
+.stamp {
+  display: inline-block;
+  font-family: var(--serif-stamp);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--stamp);
+  border: 3px double var(--stamp);
+  padding: 0.4rem 1rem;
+  transform: rotate(-7deg);
+  mix-blend-mode: multiply;
+  margin: 0 0 1.75rem;
+  animation: stampIn 0.5s ease-out 0.2s both;
+}
+@keyframes stampIn {
+  0% { opacity: 0; transform: rotate(-7deg) scale(2.2); }
+  60% { opacity: 1; transform: rotate(-9deg) scale(0.92); }
+  100% { opacity: 1; transform: rotate(-7deg) scale(1); }
+}
+
+.bio {
+  max-width: 42ch;
+  color: var(--ink);
+}
+
+.see-evidence {
+  display: inline-block;
+  margin-top: 0.5rem;
+  text-underline-offset: 3px;
+}
+
+/* ---- dividers ---- */
+.tear {
+  border: none;
+  border-top: 2px dashed rgba(36,31,26,0.3);
+  margin: 2.75rem 0;
+}
+
+/* ---- sections ---- */
+.section p.empty-note {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* ---- exhibits ---- */
+.exhibits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.exhibit {
+  background: var(--paper-card);
+  border: 1px solid rgba(36,31,26,0.35);
+  padding: 1.1rem 1.2rem 1.3rem;
+  transform: rotate(var(--rot, 0deg));
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.exhibit:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
+.exhibit::before {
+  content: "";
+  position: absolute;
+  top: -0.5rem;
+  left: 1.1rem;
+  width: 1.6rem;
+  height: 0.9rem;
+  background: rgba(36,31,26,0.55);
+  clip-path: polygon(15% 0, 85% 0, 100% 100%, 0 100%);
+}
+
+.exhibit-tag {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.4rem;
+}
+.exhibit h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.exhibit p {
+  font-size: 0.92rem;
+  margin: 0 0 0.75rem;
+}
+
+.exhibit--sealed {
+  border-style: dashed;
+  color: var(--ink-muted);
+}
+.exhibit--sealed h3 { color: var(--ink-muted); }
+
+/* ---- tip form ---- */
+.tip-copy { max-width: 44ch; }
+
+#tip-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 30rem;
+  margin-top: 1.25rem;
+}
+#tip-form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+.opt { font-style: italic; }
+
+#tip-form input,
+#tip-form textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper-card);
+  border: 1px solid rgba(36,31,26,0.4);
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
+}
+
+#tip-form button {
+  justify-self: start;
+  font: inherit;
+  font-family: var(--serif-stamp);
+  background: var(--ink);
+  color: var(--paper);
+  border: 0;
+  padding: 0.65rem 1.4rem;
+  cursor: pointer;
+}
+#tip-form button:hover { background: var(--stamp); }
+
+.tip-hint {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  margin: -0.25rem 0 0;
+}
+
+#tip-status {
+  margin-top: 0.75rem;
+  font-style: italic;
+  color: var(--ink-muted);
+}
+
+/* ---- footer ---- */
+.foot {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(36,31,26,0.25);
+  text-align: center;
+  color: var(--ink-muted);
+}
+.foot .links a { margin: 0 0.6rem; }
+
+/* ---- motion & small screens ---- */
+@media (prefers-reduced-motion: reduce) {
+  .stamp, .redacted.shake .bar { animation: none; }
+}
+
+@media (max-width: 30rem) {
+  .sheet { margin: 2.5rem auto 4rem; }
+  .cover-top { flex-direction: column; gap: 0.35rem; }
+}
