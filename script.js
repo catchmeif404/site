@@ -11,8 +11,11 @@ redacted.addEventListener("click", () => {
 // backend is unreachable — this is a static site with no build step, it should never break on a
 // failed fetch.
 const REPORTS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/field-reports";
+const EXHIBITS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/exhibits";
 const reportsEmpty = document.getElementById("reports-empty");
 const reportsList = document.getElementById("reports-list");
+const exhibitsLabel = document.getElementById("exhibits-label");
+const exhibitsList = document.getElementById("exhibits-list");
 
 fetch(REPORTS_API)
   .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
@@ -62,6 +65,65 @@ function formatReportDate(iso) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+fetch(EXHIBITS_API)
+  .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+  .then((entries) => {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    exhibitsList.replaceChildren();
+    exhibitsLabel.textContent = `Evidence on file — ${entries.length} item${entries.length === 1 ? "" : "s"} logged`;
+    entries.forEach((entry, index) => {
+      exhibitsList.appendChild(renderExhibit(entry, index));
+    });
+  })
+  .catch(() => {
+    // Keep the hard-coded case file exhibits if the CMS feed is empty or unreachable.
+  });
+
+function renderExhibit(entry, index) {
+  const article = document.createElement("article");
+  article.className = "exhibit";
+  article.style.setProperty("--rot", `${[-2, 1.5, -1, 1][index % 4]}deg`);
+
+  const tag = document.createElement("span");
+  tag.className = "exhibit-tag";
+  tag.textContent = `Exhibit ${String.fromCharCode(65 + index)}`;
+  article.appendChild(tag);
+
+  const title = document.createElement("h3");
+  title.textContent = entry.title || entry.projectKey || "Untitled";
+  article.appendChild(title);
+
+  if (entry.description) {
+    const description = document.createElement("p");
+    description.textContent = entry.description;
+    article.appendChild(description);
+  }
+
+  const links = document.createElement("p");
+  links.className = "exhibit-links";
+
+  if (entry.url) {
+    const live = document.createElement("a");
+    live.href = entry.url;
+    live.textContent = "View live";
+    links.appendChild(live);
+  }
+
+  if (entry.projectKey) {
+    const repo = document.createElement("a");
+    repo.href = `https://github.com/catchmeif404/${encodeURIComponent(entry.projectKey)}`;
+    repo.textContent = "Open file";
+    links.appendChild(repo);
+  }
+
+  if (links.children.length > 0) {
+    article.appendChild(links);
+  }
+
+  return article;
 }
 
 const form = document.getElementById("tip-form");
