@@ -13,6 +13,7 @@ redacted.addEventListener("click", () => {
 const REPORTS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/field-reports";
 const EXHIBITS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/exhibits";
 const UPCOMING_API = "https://catchmeif404-admin-production.up.railway.app/api/public/calendar/events";
+const ANNOUNCEMENTS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/announcements";
 const reportsEmpty = document.getElementById("reports-empty");
 const reportsList = document.getElementById("reports-list");
 const exhibitsLabel = document.getElementById("exhibits-label");
@@ -20,6 +21,9 @@ const exhibitsList = document.getElementById("exhibits-list");
 const upcomingSection = document.getElementById("upcoming-section");
 const upcomingTear = document.getElementById("upcoming-tear");
 const upcomingList = document.getElementById("upcoming-list");
+const announcementsSection = document.getElementById("announcements-section");
+const announcementsTear = document.getElementById("announcements-tear");
+const announcementsList = document.getElementById("announcements-list");
 
 fetch(REPORTS_API)
   .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
@@ -33,6 +37,21 @@ fetch(REPORTS_API)
   })
   .catch(() => {
     // Leave the "No reports filed yet" note as-is.
+  });
+
+fetch(ANNOUNCEMENTS_API)
+  .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+  .then((entries) => {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    announcementsSection.hidden = false;
+    announcementsTear.hidden = false;
+    for (const entry of entries) {
+      announcementsList.appendChild(renderReport(entry));
+    }
+  })
+  .catch(() => {
+    // Keep the section hidden until there is announcement material.
   });
 
 function renderReport(entry) {
