@@ -200,6 +200,33 @@ textarea:focus-visible {
 
 .report a { font-size: 0.85rem; }
 
+/* ---- upcoming ---- */
+.upcoming {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+}
+
+.upcoming-item {
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(36,31,26,0.35);
+  background: rgba(241,233,210,0.55);
+}
+
+.upcoming-item h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.upcoming-item p {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+}
+
+.upcoming-item a {
+  font-size: 0.85rem;
+}
+
 /* ---- exhibits ---- */
 .exhibits {
   display: grid;

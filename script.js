@@ -12,10 +12,14 @@ redacted.addEventListener("click", () => {
 // failed fetch.
 const REPORTS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/field-reports";
 const EXHIBITS_API = "https://catchmeif404-admin-production.up.railway.app/api/public/exhibits";
+const UPCOMING_API = "https://catchmeif404-admin-production.up.railway.app/api/public/calendar/events";
 const reportsEmpty = document.getElementById("reports-empty");
 const reportsList = document.getElementById("reports-list");
 const exhibitsLabel = document.getElementById("exhibits-label");
 const exhibitsList = document.getElementById("exhibits-list");
+const upcomingSection = document.getElementById("upcoming-section");
+const upcomingTear = document.getElementById("upcoming-tear");
+const upcomingList = document.getElementById("upcoming-list");
 
 fetch(REPORTS_API)
   .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
@@ -124,6 +128,56 @@ function renderExhibit(entry, index) {
   }
 
   return article;
+}
+
+fetch(UPCOMING_API)
+  .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+  .then((entries) => {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    upcomingSection.hidden = false;
+    upcomingTear.hidden = false;
+    entries.slice(0, 4).forEach((entry) => {
+      upcomingList.appendChild(renderUpcoming(entry));
+    });
+  })
+  .catch(() => {
+    // Keep this section hidden until there is public calendar material.
+  });
+
+function renderUpcoming(entry) {
+  const article = document.createElement("article");
+  article.className = "upcoming-item";
+
+  const meta = document.createElement("span");
+  meta.className = "report-meta";
+  meta.textContent = `${formatKind(entry.kind)} — ${formatReportDate(entry.date)}`;
+  article.appendChild(meta);
+
+  const title = document.createElement("h3");
+  title.textContent = entry.title;
+  article.appendChild(title);
+
+  if (entry.body) {
+    const body = document.createElement("p");
+    body.textContent = entry.body;
+    article.appendChild(body);
+  }
+
+  if (entry.url) {
+    const link = document.createElement("a");
+    link.href = entry.url;
+    link.textContent = "View";
+    article.appendChild(link);
+  }
+
+  return article;
+}
+
+function formatKind(kind) {
+  return String(kind || "Note")
+    .toLowerCase()
+    .replace(/_/g, " ");
 }
 
 const form = document.getElementById("tip-form");
