@@ -23,64 +23,69 @@
 <body>
 
   <main class="sheet">
-    <div class="tab">Case file</div>
+    <div class="tab"><span lang="en">Case file</span><span lang="ko">사건 파일</span></div>
+    <div class="language-switch" aria-label="Language / 언어">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ko">한국어</button>
+    </div>
 
     <header class="cover">
       <div class="cover-top">
         <span class="ref">Ref. 0000-404</span>
-        <span class="tag-open">Status: Open</span>
+        <span class="tag-open"><span lang="en">Status: Open</span><span lang="ko">상태: 미해결</span></span>
       </div>
 
-      <p class="field-label">Subject</p>
+      <p class="field-label"><span lang="en">Subject</span><span lang="ko">대상</span></p>
       <button type="button" class="redacted" title="nice try" aria-label="Redacted">
         <span class="visually-hidden">Redacted</span>
         <span class="bar bar-1" aria-hidden="true"></span>
         <span class="bar bar-2" aria-hidden="true"></span>
       </button>
 
-      <p class="alias">Goes by <strong>catchmeif404</strong>.</p>
+      <p class="alias"><span lang="en">Goes by <strong>catchmeif404</strong>.</span><span lang="ko">활동명은 <strong>catchmeif404</strong>.</span></p>
 
-      <div class="stamp" aria-hidden="true">Still at large</div>
+      <div class="stamp" aria-hidden="true"><span lang="en">Still at large</span><span lang="ko">여전히 행방불명</span></div>
 
-      <p class="bio">
+      <p class="bio" lang="en">
         Ships small tools nobody asked for. Confirmed sightings on GitHub
         and at least one inbox. Motive unclear. Last seen debugging a NAT
         Gateway bill at 2&nbsp;a.m.
       </p>
+      <p class="bio" lang="ko">아무도 부탁하지 않은 작은 도구를 만든다. GitHub와 메일함에서 목격됨.
+        동기는 불명. 마지막 목격 시각은 새벽 2시, NAT Gateway 요금과 씨름하던 중이었다.</p>
 
-      <a class="see-evidence" href="#evidence">See what's been found</a>
+      <a class="see-evidence" href="#evidence"><span lang="en">See what's been found</span><span lang="ko">확보된 증거 보기</span></a>
     </header>
 
     <hr class="tear" aria-hidden="true">
 
     <section id="evidence" class="section">
-      <p class="field-label" id="exhibits-label">Evidence on file — 2 items logged</p>
+      <p class="field-label" id="exhibits-label"><span lang="en">Evidence on file — 2 items logged</span><span lang="ko">확보된 증거 — 2건</span></p>
 
       <div class="exhibits" id="exhibits-list">
         <article class="exhibit" style="--rot:-2deg">
-          <span class="exhibit-tag">Exhibit A</span>
+          <span class="exhibit-tag"><span lang="en">Exhibit A</span><span lang="ko">증거물 A</span></span>
           <h3>AWS Cost Calculator</h3>
-          <p>Guesses your AWS bill before AWS tells you. Rule-based, no
-            surprises.</p>
+          <p lang="en">Guesses your AWS bill before AWS tells you. Rule-based, no surprises.</p>
+          <p lang="ko">AWS보다 먼저 이번 달 요금을 추정한다. 규칙 기반. 갑작스러운 청구서는 증거물에서 제외.</p>
           <p class="exhibit-links">
-            <a href="https://aws-costpilot.trade">View live</a>
-            <a href="https://github.com/catchmeif404/aws-cost-calculator">Open
-              file</a>
+            <a href="https://aws-costpilot.trade"><span lang="en">View live</span><span lang="ko">서비스 보기</span></a>
+            <a href="https://github.com/catchmeif404/aws-cost-calculator"><span lang="en">Open file</span><span lang="ko">파일 열기</span></a>
           </p>
         </article>
 
         <article class="exhibit" style="--rot:1.5deg">
-          <span class="exhibit-tag">Exhibit B</span>
+          <span class="exhibit-tag"><span lang="en">Exhibit B</span><span lang="ko">증거물 B</span></span>
           <h3>DevDNA</h3>
-          <p>Runs your GitHub activity through evidence processing. Tells
-            you what kind of developer you are.</p>
-          <a href="https://github.com/catchmeif404/DevDNA">Open file</a>
+          <p lang="en">Runs your GitHub activity through evidence processing. Tells you what kind of developer you are.</p>
+          <p lang="ko">GitHub 활동을 증거 분석에 부친다. 어떤 개발자인지 판정이 나온다.</p>
+          <a href="https://github.com/catchmeif404/DevDNA"><span lang="en">Open file</span><span lang="ko">파일 열기</span></a>
         </article>
 
         <article class="exhibit exhibit--sealed" style="--rot:-1deg">
-          <span class="exhibit-tag">Exhibit C</span>
-          <h3>Classified</h3>
-          <p>Pending release.</p>
+          <span class="exhibit-tag"><span lang="en">Exhibit C</span><span lang="ko">증거물 C</span></span>
+          <h3><span lang="en">Classified</span><span lang="ko">기밀</span></h3>
+          <p><span lang="en">Pending release.</span><span lang="ko">공개 대기 중.</span></p>
         </article>
       </div>
     </section>
@@ -88,59 +93,75 @@
     <hr class="tear" aria-hidden="true">
 
     <section class="section" id="upcoming-section" hidden>
-      <p class="field-label">Upcoming</p>
+      <p class="field-label"><span lang="en">Upcoming</span><span lang="ko">예정된 움직임</span></p>
       <div class="upcoming" id="upcoming-list"></div>
     </section>
 
     <hr class="tear" id="upcoming-tear" aria-hidden="true" hidden>
 
     <section class="section" id="announcements-section" hidden>
-      <p class="field-label">Announcements</p>
+      <p class="field-label"><span lang="en">Announcements</span><span lang="ko">공지</span></p>
       <div class="reports" id="announcements-list"></div>
     </section>
 
     <hr class="tear" id="announcements-tear" aria-hidden="true" hidden>
 
     <section class="section">
-      <p class="field-label">Field reports</p>
-      <p class="empty-note" id="reports-empty">No reports filed yet. Check back.</p>
+      <p class="field-label"><span lang="en">Field reports</span><span lang="ko">현장 보고</span></p>
+      <p class="empty-note" id="reports-empty"><span lang="en">No reports filed yet. Check back.</span><span lang="ko">아직 접수된 보고가 없다. 다시 확인하라.</span></p>
       <div class="reports" id="reports-list"></div>
     </section>
 
     <hr class="tear" aria-hidden="true">
 
+    <section id="shorts-factory" class="section">
+      <p class="field-label"><span lang="en">Operations file</span><span lang="ko">운영 기록</span></p>
+      <h2>Shorts Factory <small>(short_factory)</small></h2>
+      <p lang="en">A local video production tool behind the case file. It drafts and renders videos, then uses
+        Google authorization only to upload a human-approved video to YouTube and read that channel's performance.
+        Nothing is published without human approval; an approved video can be scheduled for later publication.
+        The operator remains hard to locate; the data handling does not.</p>
+      <p lang="ko">이 사건 파일 뒤에서 작동하는 로컬 영상 제작 도구. 대본과 영상을 만든 뒤, 사람의 승인을 받은
+        영상만 Google 인증을 통해 YouTube에 업로드하고 해당 채널의 성과를 읽는다. 사람의 승인 없이 공개하지 않으며,
+        승인된 영상은 나중에 공개되도록 예약할 수 있다.
+        운영자는 찾기 어렵지만 데이터 처리 방식은 공개한다.</p>
+      <a href="/privacy.html"><span lang="en">Read the privacy file</span><span lang="ko">개인정보처리방침 열기</span></a>
+    </section>
+
+    <hr class="tear" aria-hidden="true">
+
     <section id="tip" class="section">
-      <p class="field-label">Submit a tip</p>
-      <p class="tip-copy">Think you know who's behind this? Leave a
-        message. No promises it gets answered.</p>
+      <p class="field-label"><span lang="en">Submit a tip</span><span lang="ko">제보 접수</span></p>
+      <p class="tip-copy" lang="en">Think you know who's behind this? Leave a message. No promises it gets answered.</p>
+      <p class="tip-copy" lang="ko">배후를 안다고 생각한다면 제보하라. 답장은 보장하지 않는다.</p>
 
       <form id="tip-form" novalidate>
         <label>
-          <span>Name <span class="opt">(optional)</span></span>
+          <span><span lang="en">Name <span class="opt">(optional)</span></span><span lang="ko">이름 <span class="opt">(선택)</span></span></span>
           <input type="text" name="name" autocomplete="name">
         </label>
         <label>
-          <span>Email</span>
+          <span><span lang="en">Email</span><span lang="ko">이메일</span></span>
           <input type="email" name="email" autocomplete="email" required>
         </label>
         <label>
-          <span>Message</span>
+          <span><span lang="en">Message</span><span lang="ko">내용</span></span>
           <textarea name="message" rows="4" required></textarea>
         </label>
-        <button type="submit">File report</button>
-        <p class="tip-hint">Opens your email app — nothing sends
-          automatically.</p>
+        <button type="submit"><span lang="en">File report</span><span lang="ko">제보 초안 작성</span></button>
+        <p class="tip-hint"><span lang="en">Opens your email app — nothing sends automatically.</span><span lang="ko">메일 앱을 열 뿐, 자동 발송되지는 않는다.</span></p>
       </form>
       <p id="tip-status" role="status"></p>
     </section>
 
     <footer class="foot">
-      <p>You found the file. You didn't find me.</p>
+      <p><span lang="en">You found the file. You didn't find me.</span><span lang="ko">파일은 찾았다. 나는 못 찾았다.</span></p>
       <p class="links">
         <a href="https://github.com/catchmeif404">GitHub</a>
         <a href="https://x.com/catchmeif404">X</a>
         <a href="https://www.threads.com/@catchmeif404">Threads</a>
         <a href="mailto:hello@catchmeif404.com">Email</a>
+        <a href="/privacy.html"><span lang="en">Privacy</span><span lang="ko">개인정보처리방침</span></a>
       </p>
     </footer>
   </main>

@@ -16,6 +16,8 @@
 * { box-sizing: border-box; }
 
 html { color-scheme: light; }
+html[lang="en"] [lang="ko"],
+html[lang="ko"] [lang="en"] { display: none !important; }
 
 body {
   margin: 0;
@@ -44,6 +46,29 @@ input:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--stamp);
   outline-offset: 2px;
+}
+
+.language-switch {
+  position: absolute;
+  top: -1.6rem;
+  right: 2rem;
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  background: var(--paper);
+  box-shadow: 0 -2px 0 rgba(0,0,0,0.05) inset;
+}
+.language-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 0.3rem 0.55rem;
+  font: 700 0.78rem var(--mono);
+  cursor: pointer;
+}
+.language-switch button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 /* ---- the sheet ---- */
@@ -345,7 +370,13 @@ textarea:focus-visible {
   text-align: center;
   color: var(--ink-muted);
 }
-.foot .links a { margin: 0 0.6rem; }
+.foot .links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.foot .links a { margin: 0; white-space: nowrap; }
+
+.policy-sheet h1 { font-family: var(--serif-stamp); line-height: 1.2; }
+.policy-sheet h2 { font-size: 1.05rem; margin-top: 1.8rem; }
+.policy-sheet p { max-width: 68ch; }
+.policy-sheet code { overflow-wrap: anywhere; }
 
 /* ---- motion & small screens ---- */
 @media (prefers-reduced-motion: reduce) {
@@ -355,4 +386,5 @@ textarea:focus-visible {
 @media (max-width: 30rem) {
   .sheet { margin: 2.5rem auto 4rem; }
   .cover-top { flex-direction: column; gap: 0.35rem; }
+  .language-switch { right: 0.8rem; }
 }

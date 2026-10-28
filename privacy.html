@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shorts Factory — privacy file | catchmeif404</title>
+  <meta name="description" content="How Shorts Factory handles Google and YouTube account data.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="sheet policy-sheet">
+    <div class="tab"><span lang="en">Open file</span><span lang="ko">공개 파일</span></div>
+    <div class="language-switch" aria-label="Language / 언어">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ko">한국어</button>
+    </div>
+
+    <div class="cover-top">
+      <span>Ref. 0000-404 / SF-PRIVACY</span>
+      <span><span lang="en">Status: Public</span><span lang="ko">상태: 공개</span></span>
+    </div>
+    <h1><span lang="en">Shorts Factory privacy file</span><span lang="ko">Shorts Factory 개인정보처리방침</span></h1>
+    <p class="field-label"><span lang="en">Effective 28 October 2026</span><span lang="ko">시행일 2026년 10월 28일</span></p>
+    <p lang="en">The operator remains anonymous. The data trail does not. This policy covers the local Shorts Factory
+      app (listed as <code>short_factory</code> on Google's consent screen) and its Google/YouTube authorization.
+      The public case-file website does not receive OAuth tokens.</p>
+    <p lang="ko">운영자는 익명이지만 데이터의 행방은 공개한다. 이 방침은 Google 동의 화면에
+      <code>short_factory</code>로 표시되는 로컬 Shorts Factory 애플리케이션의
+      Google/YouTube 인증에 적용된다. 공개 사건 파일 웹사이트는 OAuth 토큰을 받지 않는다.</p>
+
+    <hr class="tear" aria-hidden="true">
+
+    <section class="section" lang="en">
+      <h2>1. Data accessed</h2>
+      <p>With your consent, Shorts Factory requests the YouTube upload, YouTube account-management, and YouTube
+        Analytics read-only scopes. It may access the authorized channel name, its video identifiers and statistics,
+        and Analytics results such as views, engagement, watch time, and subscriber changes. Google provides a
+        refresh token to keep this authorization active.</p>
+      <h2>2. Use and storage</h2>
+      <p>The app uploads a video and thumbnail only after its operator reviews and approves that run. API uploads
+        start as private videos; the operator can explicitly schedule an approved video for later publication.
+        It reads channel/video metrics to display performance in the local dashboard.
+        Refresh tokens and OAuth client credentials are stored in the operator's local <code>.env</code> file;
+        upload records and metrics are stored in a local SQLite database. The public website does not host this data.</p>
+      <h2>3. Sharing</h2>
+      <p>The app sends authorized requests to Google/YouTube APIs for the functions above. It does not sell Google
+        user data or share OAuth tokens and channel analytics with advertisers or script-writing AI providers.
+        Script-writing providers may receive public news or official Assembly transcripts, not your Google account
+        credentials or private YouTube Analytics.</p>
+      <h2>4. Retention and control</h2>
+      <p>Local credentials and records remain until the operator removes them. You can revoke access in your
+        <a href="https://myaccount.google.com/permissions">Google Account connections</a>. Removing the local
+        <code>.env</code> credentials and SQLite records deletes the app's local copies; revocation prevents future
+        API access. For an access or deletion request, contact the address below.</p>
+      <h2>5. Contact and changes</h2>
+      <p>Contact: <a href="mailto:catchmeif404@gmail.com">catchmeif404@gmail.com</a>. Material changes to this
+        policy will be posted here with a new effective date.</p>
+    </section>
+
+    <section class="section" lang="ko">
+      <h2>1. 접근하는 데이터</h2>
+      <p>동의하면 Shorts Factory는 YouTube 업로드, YouTube 계정 관리, YouTube Analytics 읽기 전용 권한을
+        요청한다. 승인된 채널 이름, 영상 ID·통계, 조회·참여·시청 시간·구독자 변화 등의 분석 결과에 접근할 수 있다.
+        Google은 인증을 유지하기 위한 갱신 토큰을 제공한다.</p>
+      <h2>2. 이용과 저장</h2>
+      <p>운영자가 해당 실행을 검토·승인한 뒤에만 영상과 썸네일을 업로드하며, API 업로드는 비공개 상태로 시작한다.
+        운영자가 승인된 영상을 나중에 공개하도록 명시적으로 예약할 수 있다.
+        채널·영상 지표는 로컬 대시보드에 성과를 표시하는 데 사용한다. 갱신 토큰과 OAuth 클라이언트 자격정보는
+        운영자의 로컬 <code>.env</code> 파일에, 업로드 기록과 지표는 로컬 SQLite 데이터베이스에 저장한다.
+        공개 웹사이트는 이 데이터를 보관하지 않는다.</p>
+      <h2>3. 공유</h2>
+      <p>위 기능을 위해 Google/YouTube API에 승인된 요청을 보낸다. Google 사용자 데이터를 판매하지 않으며,
+        OAuth 토큰과 채널 분석 정보를 광고주나 대본 작성 AI 제공업체와 공유하지 않는다. 대본 작성에는 공개 뉴스나
+        국회 공식 전사가 쓰일 수 있지만 Google 계정 자격정보나 비공개 YouTube Analytics는 전달하지 않는다.</p>
+      <h2>4. 보관과 통제</h2>
+      <p>로컬 자격정보와 기록은 운영자가 삭제할 때까지 보관한다. 이용자는
+        <a href="https://myaccount.google.com/permissions">Google 계정 연결 관리</a>에서 접근 권한을 철회할 수 있다.
+        로컬 <code>.env</code> 자격정보와 SQLite 기록을 삭제하면 앱의 로컬 사본이 제거되며, 권한 철회 후에는
+        추가 API 접근이 불가능하다. 열람·삭제 요청은 아래 연락처로 보낼 수 있다.</p>
+      <h2>5. 연락처와 변경</h2>
+      <p>연락처: <a href="mailto:catchmeif404@gmail.com">catchmeif404@gmail.com</a>. 중요한 변경이 있으면
+        시행일을 바꿔 이 페이지에 게시한다.</p>
+    </section>
+
+    <footer class="foot">
+      <p><span lang="en">You found the policy. You didn't find me.</span><span lang="ko">방침은 찾았다. 나는 못 찾았다.</span></p>
+      <p class="links"><a href="/"><span lang="en">Back to the case file</span><span lang="ko">사건 파일로 돌아가기</span></a></p>
+    </footer>
+  </main>
+  <script src="/script.js"></script>
+</body>
+</html>
