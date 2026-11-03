@@ -1,7 +1,7 @@
 # catchmeif404.com
 
 The main site. A product showroom for catchmeif404: each product hangs on its own rack of
-screenshots (figdex is first), with a contact section and a public Shorts Factory privacy file.
+screenshots (figdex is first) and a contact section. A public Shorts Factory privacy file is served separately.
 The homepage and privacy file can be read in English or Korean with the EN/한국어 switch.
 
 No framework, no build step. Plain HTML/CSS/JS.
@@ -34,8 +34,8 @@ rack index number, put screenshots under `assets/<product>/`, and set `data-fram
 The figdex screenshots in `assets/figdex/` are QA captures with test accounts and must be replaced
 before release.
 
-The homepage links to the privacy file from the Shorts Factory note and footer.
-The public policy is served at both `/privacy` and `/privacy.html`.
+The homepage does not link to the privacy file or mention Shorts Factory (owner decision,
+2026-11-03). The public policy is still served at both `/privacy` and `/privacy.html`.
 
 ## Deploy
 

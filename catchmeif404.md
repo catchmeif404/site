@@ -18,7 +18,8 @@ catchmeif404 product showroom; the case-file identity now lives only in `privacy
   detail overlay built from each rack's markup (`.hanger-title`, `.hanger-desc`, `.rack-info`,
   `.rack-ctas`; Esc closes, arrow keys step).
 - `privacy.html` is the public, bilingual Shorts Factory privacy file (required for Google OAuth
-  verification). It still uses `style.css` and `script.js`. `style.css` owns that file's tokens and
+  verification). The homepage no longer mentions Shorts Factory or links to this file (owner
+  decision, 2026-11-03); it stays reachable at `/privacy` and `/privacy.html`. It still uses `style.css` and `script.js`. `style.css` owns that file's tokens and
   layout; `script.js` owns the redaction easter egg, the tip form, and the public feed fetches
   (field reports, exhibits, announcements, upcoming). The homepage no longer uses the feed fetches
   or the tip form.
