@@ -13,6 +13,7 @@ and tonal reference for the anonymous-developer case-file identity.
   redaction easter egg, tip form, and public feed fetches.
 - Keep the case-file framing, restrained red accents, redactions, evidence/exhibit language, and
   dry deadpan tone intact.
+- `figdex/index.html` (`/figdex/`) and `figdex/privacy.html` (`/figdex/privacy`) are standalone, inline-styled, bilingual pages for Google OAuth verification (TK-240). `figdex/privacy.html` is a verbatim copy of figdex `backend/src/main/resources/static/privacy.html` (version 2, effective 2026-11-06; source commit in an HTML comment). Do not edit the policy text here: change it in figdex first, then re-copy.
 
 ## Development and verification
 
