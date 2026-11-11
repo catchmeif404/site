@@ -33,6 +33,7 @@ catchmeif404 product showroom; the case-file identity now lives only in `privacy
   before release.
 - Adding a product: copy a rack section, give it an `id`, update the nav link and the rack index
   number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` today).
+- `figdex/index.html` (`/figdex/`) and `figdex/privacy.html` (`/figdex/privacy`) are standalone, inline-styled, bilingual pages for Google OAuth verification (TK-240). `figdex/privacy.html` is a verbatim copy of figdex `backend/src/main/resources/static/privacy.html` (version 2, effective 2026-11-06; source commit in an HTML comment). Do not edit the policy text here: change it in figdex first, then re-copy.
 
 ## Development and verification
 
