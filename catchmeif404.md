@@ -3,7 +3,7 @@
 Project guidance for any AI coding agent working on the `catchmeif404.com` static site.
 
 Read the parent workspace guidance in `../catchmeif404.md` first. The homepage is the
-catchmeif404 product showroom; the case-file identity now lives only in `privacy.html`.
+catchmeif404 product showroom. The anonymous-developer case-file persona is retired (owner decision 2026-11-11); write plain product language.
 
 ## Project
 
@@ -17,22 +17,18 @@ catchmeif404 product showroom; the case-file identity now lives only in `privacy
   `home.js` owns the EN/KO switch (same `site-language` localStorage key as `script.js`) and the
   detail overlay built from each rack's markup (`.hanger-title`, `.hanger-desc`, `.rack-info`,
   `.rack-ctas`; Esc closes, arrow keys step).
-- `privacy.html` is the public, bilingual Shorts Factory privacy file (required for Google OAuth
+- `privacy.html` is the public, bilingual Shorts Factory privacy policy (required for Google OAuth
   verification). The homepage no longer mentions Shorts Factory or links to this file (owner
   decision, 2026-11-03); it stays reachable at `/privacy` and `/privacy.html`. It still uses `style.css` and `script.js`. `style.css` owns that file's tokens and
-  layout; `script.js` owns the redaction easter egg, the tip form, and the public feed fetches
-  (field reports, exhibits, announcements, upcoming). The homepage no longer uses the feed fetches
-  or the tip form.
+  layout; `script.js` owns only its EN/KO switch and page title.
 - Visual voice for the homepage: navy `#1B2430` and blue `#2F6BEB` from the 404 logo, Outfit /
-  Noto Sans KR / JetBrains Mono. Tagline: "The operator is 404, the services are 200 /
-  운영자는 404, 서비스는 200".
-- Case-file voice (redactions, "Subject", "Ref.", exhibits, dry deadpan tone, restrained red
-  accents) remains only on `privacy.html`. Do not spread it to the homepage or new product rails.
+  Noto Sans KR / JetBrains Mono. No tagline; the page says what it is (products).
 - Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, and `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`.
   The figdex screenshots are QA captures that show test accounts. Replace them with clean captures
   before release.
 - Adding a product: copy a rack section, give it an `id`, update the nav link and the rack index
   number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` today).
+- `figdex/index.html` (`/figdex/`) and `figdex/privacy.html` (`/figdex/privacy`) are standalone, inline-styled, bilingual pages for Google OAuth verification (TK-240). `figdex/privacy.html` is a verbatim copy of figdex `backend/src/main/resources/static/privacy.html` (version 2, effective 2026-11-06; source commit in an HTML comment). Do not edit the policy text here: change it in figdex first, then re-copy.
 
 ## Development and verification
 
@@ -42,7 +38,7 @@ python3 -m http.server 8080
 
 Open `http://localhost:8080` and verify responsive layout at desktop and 375px mobile, EN/KO
 selection on the homepage and privacy file, rack detail open/close/step (Esc, arrow keys), links,
-the privacy file (unaffected by homepage changes), and the browser console (no errors). Light
+the privacy policy (unaffected by homepage changes), and the browser console (no errors). Light
 theme only. Do not add a build tool or framework for a small content/layout change.
 
 ## Deployment
@@ -51,8 +47,7 @@ Cloudflare Pages deploys this repository through its Git integration. Production
 the workspace tag policy described in the parent guidance; do not assume every push is a release.
 Last verified 2026-10-28: commit `1d60c96` was pushed to `main`, and the updated homepage and
 Shorts Factory privacy file were served live. Both `https://catchmeif404.com/privacy` and
-`https://catchmeif404.com/privacy.html` returned HTTP 200. The homepage links to the public
-privacy file; the case remains open.
+`https://catchmeif404.com/privacy.html` returned HTTP 200.
 
 The `feat/showroom-home` branch (commit `89d6f60`) is not merged to `main` and not deployed. The
 last verified record above describes the previous case-file homepage, not the showroom.

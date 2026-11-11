@@ -5,7 +5,7 @@ const locale = stored === "ko" || (stored === null && navigator.language.startsW
 const tr = (en, ko) => (locale === "ko" ? ko : en);
 
 document.documentElement.lang = locale;
-document.title = tr("catchmeif404 — the operator is 404, the services are 200", "catchmeif404 — 운영자는 404, 서비스는 200");
+document.title = tr("catchmeif404 — products", "catchmeif404 — 제품");
 document.querySelectorAll("[data-lang]").forEach((button) => {
   button.setAttribute("aria-pressed", String(button.dataset.lang === locale));
   button.addEventListener("click", () => {
