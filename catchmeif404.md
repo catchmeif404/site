@@ -47,7 +47,7 @@ Cloudflare Pages deploys this repository through its Git integration. Production
 the workspace tag policy described in the parent guidance; do not assume every push is a release.
 Last verified 2026-10-28: commit `1d60c96` was pushed to `main`, and the updated homepage and
 Shorts Factory privacy file were served live. Both `https://catchmeif404.com/privacy` and
-`https://catchmeif404.com/privacy.html` returned HTTP 200. 
+`https://catchmeif404.com/privacy.html` returned HTTP 200.
 
 The `feat/showroom-home` branch (commit `89d6f60`) is not merged to `main` and not deployed. The
 last verified record above describes the previous case-file homepage, not the showroom.
