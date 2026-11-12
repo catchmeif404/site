@@ -51,3 +51,9 @@ Shorts Factory privacy file were served live. Both `https://catchmeif404.com/pri
 
 The `feat/showroom-home` branch (commit `89d6f60`) is not merged to `main` and not deployed. The
 last verified record above describes the previous case-file homepage, not the showroom.
+
+## Ads verification
+
+`ads.txt` and the AdSense tag in `index.html` (`ca-pub-6944124131865180`) verify catchmeif404.com
+for Google AdSense so subdomain products (SantaPick at `santapick.catchmeif404.com`) can show ads.
+No ad units are placed on this showroom page. Added 2026-11-12 at the owner's request.
