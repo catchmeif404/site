@@ -14,13 +14,11 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
   by a closing "next rail is empty (404)" section that holds contact.
 - `home.css` owns the homepage tokens, layout, and motion (scroll-driven animations use
   `animation-timeline` with a static fallback; `prefers-reduced-motion` is respected).
-  `home.js` owns the EN/KO switch (same `site-language` localStorage key as `script.js`) and the
+  `home.js` owns the EN/KO switch (`site-language` localStorage key) and the
   detail overlay built from each rack's markup (`.hanger-title`, `.hanger-desc`, `.rack-info`,
   `.rack-ctas`; Esc closes, arrow keys step).
-- `privacy.html` is the public, bilingual Shorts Factory privacy policy (required for Google OAuth
-  verification). The homepage no longer mentions Shorts Factory or links to this file (owner
-  decision, 2026-11-03); it stays reachable at `/privacy` and `/privacy.html`. It still uses `style.css` and `script.js`. `style.css` owns that file's tokens and
-  layout; `script.js` owns only its EN/KO switch and page title.
+- The Shorts Factory privacy policy (`/privacy`, with `privacy.html`, `style.css`, `script.js`) was removed
+  2026-11-12: Shorts Factory is not going to production (owner decision).
 - Visual voice for the homepage: navy `#1B2430` and blue `#2F6BEB` from the 404 logo, Outfit /
   Noto Sans KR / JetBrains Mono. No tagline; the page says what it is (products).
 - Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, and `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`.
@@ -37,17 +35,15 @@ python3 -m http.server 8080
 ```
 
 Open `http://localhost:8080` and verify responsive layout at desktop and 375px mobile, EN/KO
-selection on the homepage and privacy file, rack detail open/close/step (Esc, arrow keys), links,
-the privacy policy (unaffected by homepage changes), and the browser console (no errors). Light
+selection on the homepage, rack detail open/close/step (Esc, arrow keys), links,
+the `/figdex/` pages, and the browser console (no errors). Light
 theme only. Do not add a build tool or framework for a small content/layout change.
 
 ## Deployment
 
 Cloudflare Pages deploys this repository through its Git integration. Production releases follow
 the workspace tag policy described in the parent guidance; do not assume every push is a release.
-Last verified 2026-10-28: commit `1d60c96` was pushed to `main`, and the updated homepage and
-Shorts Factory privacy file were served live. Both `https://catchmeif404.com/privacy` and
-`https://catchmeif404.com/privacy.html` returned HTTP 200.
+Last verified: see README "Deploy".
 
 The `feat/showroom-home` branch (commit `89d6f60`) is not merged to `main` and not deployed. The
 last verified record above describes the previous case-file homepage, not the showroom.

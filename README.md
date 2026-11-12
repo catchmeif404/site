@@ -1,8 +1,9 @@
 # catchmeif404.com
 
 The main site. A product showroom for catchmeif404: each product hangs on its own rack of
-screenshots (figdex is first) and a contact section. A public Shorts Factory privacy policy is served separately.
-The homepage and privacy policy can be read in English or Korean with the EN/한국어 switch.
+screenshots (figdex is first) and a contact section. figdex's
+OAuth pages live under `/figdex/`.
+The homepage can be read in English or Korean with the EN/한국어 switch.
 
 No framework, no build step. Plain HTML/CSS/JS.
 
@@ -20,21 +21,17 @@ Then open http://localhost:8080.
 index.html   # product showroom (one <section class="rack"> per product)
 home.css     # homepage tokens, layout, motion
 home.js      # EN/KO switch, product detail overlay
-privacy.html # Shorts Factory privacy policy
-style.css    # privacy policy tokens + layout
-script.js    # language switch for the privacy policy
+figdex/      # figdex info + privacy pages (Google OAuth verification)
 assets/      # logo, figdex icon and screenshots
 ```
-
-The privacy policy loads `style.css` and `script.js`; the homepage uses `home.css` and `home.js`.
 
 To add a product, copy a rack section in `index.html`, give it an `id`, update the nav link and the
 rack index number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` today).
 The figdex screenshots in `assets/figdex/` are QA captures with test accounts and must be replaced
 before release.
 
-The homepage does not link to the privacy file or mention Shorts Factory (owner decision,
-2026-11-03). The public policy is still served at both `/privacy` and `/privacy.html`.
+The Shorts Factory privacy policy (`/privacy`) was removed on 2026-11-12: Shorts Factory is not
+going to production.
 
 ## Deploy
 

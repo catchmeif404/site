@@ -1,4 +1,4 @@
-// Same language key as script.js, so the choice carries over to the privacy file.
+// EN/KO switch; the choice is kept in the site-language localStorage key.
 const LANGUAGE_KEY = "site-language";
 const stored = localStorage.getItem(LANGUAGE_KEY);
 const locale = stored === "ko" || (stored === null && navigator.language.startsWith("ko")) ? "ko" : "en";
