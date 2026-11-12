@@ -38,12 +38,10 @@ going to production.
 Static site, deployed via Cloudflare Pages (git integration — pushing to `main` redeploys, no
 build command/output directory needed).
 
-Last verified 2026-10-28: commit `1d60c96` was pushed to `main`, and Cloudflare Pages served the
-updated homepage and bilingual privacy file. Both `https://catchmeif404.com/privacy` and
-`https://catchmeif404.com/privacy.html` returned HTTP 200.
-
-The `feat/showroom-home` branch (commit `89d6f60`) is not merged to `main` and not deployed. The
-verified record above is for the previous homepage.
+Last verified 2026-11-12: PR #5 (merge `e058d97`, Shorts Factory policy removed) is live.
+`/`, `/figdex/`, `/figdex/privacy` return the current pages; `/privacy.html` and `/privacy?…` fall
+back to the homepage. Plain `/privacy` was still served from the Cloudflare edge cache
+(`s-maxage=604800`) right after the deploy and needs a cache purge (or expires within 7 days).
 
 ---
 
