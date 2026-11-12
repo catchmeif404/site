@@ -38,10 +38,10 @@ going to production.
 Static site, deployed via Cloudflare Pages (git integration — pushing to `main` redeploys, no
 build command/output directory needed).
 
-Last verified 2026-11-12: PR #5 (merge `e058d97`, Shorts Factory policy removed) is live.
-`/`, `/figdex/`, `/figdex/privacy` return the current pages; `/privacy.html` and `/privacy?…` fall
-back to the homepage. Plain `/privacy` was still served from the Cloudflare edge cache
-(`s-maxage=604800`) right after the deploy and needs a cache purge (or expires within 7 days).
+Last verified 2026-11-12: PR #5 (Shorts Factory policy removed) and PR #7 (`_redirects`) are live.
+`/`, `/figdex/`, `/figdex/privacy` return the current pages. `/privacy` and `/privacy.html` 301 to `/`:
+after the file was deleted, plain `/privacy` kept serving the old page even after a zone cache purge,
+and only the explicit redirect replaced it.
 
 ---
 

@@ -18,7 +18,8 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
   detail overlay built from each rack's markup (`.hanger-title`, `.hanger-desc`, `.rack-info`,
   `.rack-ctas`; Esc closes, arrow keys step).
 - The Shorts Factory privacy policy (`/privacy`, with `privacy.html`, `style.css`, `script.js`) was removed
-  2026-11-12: Shorts Factory is not going to production (owner decision).
+  2026-11-12: Shorts Factory is not going to production (owner decision). `_redirects` sends
+  `/privacy` and `/privacy.html` to `/` (the old page stayed live at `/privacy` until then).
 - Visual voice for the homepage: navy `#1B2430` and blue `#2F6BEB` from the 404 logo, Outfit /
   Noto Sans KR / JetBrains Mono. No tagline; the page says what it is (products).
 - Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, and `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`.
