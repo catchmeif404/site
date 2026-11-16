@@ -10,8 +10,9 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
 - Plain HTML, CSS, and JavaScript. There is no framework or build step.
 - `index.html` is a product showroom, not a case file. Each product is a `<section class="rack">`
   with screenshots hanging on a clothes-rail; new products are appended as new rack sections.
-  Light theme only (the logo art is on white). Products: figdex (01, phone app) and Maskman (02, a landscape web
-  game at maskman.catchmeif404.com, added 2026-11-16 at the owner's request), followed
+  Light theme only (the logo art is on white). Products: figdex (01, phone app), Maskman (02, a landscape web
+  game at maskman.catchmeif404.com, added 2026-11-16 at the owner's request) and SantaPick (03, the Christmas site at
+  santapick.catchmeif404.com, added 2026-11-16 at the owner's request, also so AdSense review sees real content), followed
   by a closing "next rail is empty (404)" section that holds contact.
 - `home.css` owns the homepage tokens, layout, and motion (scroll-driven animations use
   `animation-timeline` with a static fallback; `prefers-reduced-motion` is respected).
@@ -26,6 +27,8 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
 - Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`,
   and `assets/maskman/icon.png` + `assets/maskman/{title,versus,masks,map,camp,loot}.jpg` (1280x720, captured
   from the game's dev server with headless Chrome).
+  `assets/santapick/icon.png` + `assets/santapick/{village,dress,challenge,room,test,home}.jpg` (720x1560, 2x phone captures
+  of the local dev server with headless Chrome over CDP; test walkers and a test room, no real users).
   The figdex screenshots are QA captures that show test accounts. Replace them with clean captures
   before release.
 - Adding a product: copy a rack section, give it an `id`, update the nav link and the rack index
