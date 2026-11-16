@@ -38,7 +38,9 @@ going to production.
 Static site, deployed via Cloudflare Pages (git integration — pushing to `main` redeploys, no
 build command/output directory needed).
 
-Last verified 2026-11-12: PR #5 (Shorts Factory policy removed) and PR #7 (`_redirects`) are live.
+Last verified 2026-11-16: PR #9 (Maskman rack 02) is live about 15 s after the merge: `/` has `#maskman`,
+`assets/maskman/*` return 200, headless Chrome at desktop and phone width shows the rail and the 16:9 detail.
+Earlier: 2026-11-12 PR #5 (Shorts Factory policy removed) and PR #7 (`_redirects`) live.
 `/`, `/figdex/`, `/figdex/privacy` return the current pages. `/privacy` and `/privacy.html` 301 to `/`:
 after the file was deleted, plain `/privacy` kept serving the old page even after a zone cache purge,
 and only the explicit redirect replaced it.
