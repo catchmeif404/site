@@ -20,6 +20,7 @@ document.querySelectorAll("[data-lang]").forEach((button) => {
 // <section class="rack"> in index.html.
 const detail = document.getElementById("detail");
 const detailImg = document.getElementById("detail-img");
+const detailFrame = document.getElementById("detail-frame");
 const detailIcon = document.getElementById("detail-icon");
 const detailProduct = document.getElementById("detail-product");
 const detailNo = document.getElementById("detail-no");
@@ -44,6 +45,8 @@ function fill(rack, index) {
   const title = hanger.querySelector(".hanger-title");
   const productName = rack.querySelector(".rack-name").textContent;
 
+  // the big frame matches the rack's own (data-frame: phone for apps, screen for landscape web games)
+  detailFrame.className = `frame frame--${rack.dataset.frame ?? "phone"} frame--big`;
   detailImg.src = button.dataset.src;
   detailImg.alt = `${productName} — ${title.querySelector(`[lang="${locale}"]`)?.textContent ?? title.textContent}`;
   detailIcon.src = rack.querySelector(".rack-icon")?.getAttribute("src") ?? "";
