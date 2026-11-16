@@ -22,11 +22,11 @@ index.html   # product showroom (one <section class="rack"> per product)
 home.css     # homepage tokens, layout, motion
 home.js      # EN/KO switch, product detail overlay
 figdex/      # figdex info + privacy pages (Google OAuth verification)
-assets/      # logo, figdex icon and screenshots
+assets/      # logo, figdex and maskman icons and screenshots
 ```
 
 To add a product, copy a rack section in `index.html`, give it an `id`, update the nav link and the
-rack index number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` today).
+rack index number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` for app shots, `screen` for 16:9 web game shots).
 The figdex screenshots in `assets/figdex/` are QA captures with test accounts and must be replaced
 before release.
 

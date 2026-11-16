@@ -318,6 +318,27 @@ button:focus-visible {
   background: var(--shot-bg);
 }
 
+/* a screen: a landscape web game in a thin dark bezel (data-frame="screen") */
+.frame--screen {
+  display: block;
+  width: 208px;
+  height: 117px;
+  margin-top: -3px;
+  padding: 5px;
+  border-radius: 10px;
+  background: var(--ink);
+  box-shadow: 0 16px 26px -14px rgba(27, 36, 48, .35);
+  transition: box-shadow .45s;
+}
+.frame--screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--shot-bg);
+}
+
 .hanger-title { margin-top: 16px; font-weight: 700; font-size: 14px; }
 .hanger-no { margin-top: 2px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
@@ -327,7 +348,9 @@ button:focus-visible {
 .hanger-btn:hover .hanger-sway,
 .hanger-btn:focus-visible .hanger-sway { animation: swing 1.1s ease-out; }
 .hanger-btn:hover .frame--phone,
-.hanger-btn:focus-visible .frame--phone { box-shadow: 0 34px 44px -18px rgba(27, 36, 48, .5); }
+.hanger-btn:focus-visible .frame--phone,
+.hanger-btn:hover .frame--screen,
+.hanger-btn:focus-visible .frame--screen { box-shadow: 0 34px 44px -18px rgba(27, 36, 48, .5); }
 .hangers:has(.hanger-btn:hover) .hanger-btn:not(:hover),
 .hangers:has(.hanger-btn:focus-visible) .hanger-btn:not(:focus-visible) {
   opacity: .45;
@@ -424,6 +447,8 @@ button:focus-visible {
   box-shadow: 0 40px 60px -24px rgba(27, 36, 48, .5);
 }
 .frame--big img { border-radius: 35px; }
+.frame--screen.frame--big { width: min(600px, 84vw); height: auto; aspect-ratio: 16 / 9; padding: 9px; border-radius: 16px; }
+.frame--screen.frame--big img { border-radius: 9px; }
 .detail-panel {
   flex: 1 1 300px;
   max-width: 380px;
@@ -560,5 +585,7 @@ body.is-locked { overflow: hidden; }
   .detail { align-items: flex-start; }
   .frame--big { width: 200px; height: 426px; padding: 8px; border-radius: 36px; }
   .frame--big img { border-radius: 29px; }
+  .frame--screen.frame--big { width: calc(100vw - 32px); height: auto; padding: 6px; border-radius: 12px; }
+  .frame--screen.frame--big img { border-radius: 7px; }
   .detail-panel h2 { font-size: 30px; }
 }

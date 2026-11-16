@@ -10,7 +10,8 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
 - Plain HTML, CSS, and JavaScript. There is no framework or build step.
 - `index.html` is a product showroom, not a case file. Each product is a `<section class="rack">`
   with screenshots hanging on a clothes-rail; new products are appended as new rack sections.
-  Light theme only (the logo art is on white). figdex is the only product so far (01), followed
+  Light theme only (the logo art is on white). Products: figdex (01, phone app) and Maskman (02, a landscape web
+  game at maskman.catchmeif404.com, added 2026-11-16 at the owner's request), followed
   by a closing "next rail is empty (404)" section that holds contact.
 - `home.css` owns the homepage tokens, layout, and motion (scroll-driven animations use
   `animation-timeline` with a static fallback; `prefers-reduced-motion` is respected).
@@ -22,11 +23,14 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
   `/privacy` and `/privacy.html` to `/` (the old page stayed live at `/privacy` until then).
 - Visual voice for the homepage: navy `#1B2430` and blue `#2F6BEB` from the 404 logo, Outfit /
   Noto Sans KR / JetBrains Mono. No tagline; the page says what it is (products).
-- Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, and `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`.
+- Assets: `assets/logo-404.png`, `assets/figdex/icon.png`, `assets/figdex/{home,profile,detail,cabinet,dex,item}.jpg`,
+  and `assets/maskman/icon.png` + `assets/maskman/{title,versus,masks,map,camp,loot}.jpg` (1280x720, captured
+  from the game's dev server with headless Chrome).
   The figdex screenshots are QA captures that show test accounts. Replace them with clean captures
   before release.
 - Adding a product: copy a rack section, give it an `id`, update the nav link and the rack index
-  number, put screenshots under `assets/<product>/`, and set `data-frame` (`phone` today).
+  number, put screenshots under `assets/<product>/`, and set `data-frame`: `phone` (portrait app shots, `.frame--phone`) or `screen` (16:9 web game shots,
+  `.frame--screen`). The detail overlay copies the rack's frame (`#detail-frame` in home.js).
 - `figdex/index.html` (`/figdex/`) and `figdex/privacy.html` (`/figdex/privacy`) are standalone, inline-styled, bilingual pages for Google OAuth verification (TK-240). `figdex/privacy.html` is a verbatim copy of figdex `backend/src/main/resources/static/privacy.html` (version 2, effective 2026-11-06; source commit in an HTML comment). Do not edit the policy text here: change it in figdex first, then re-copy.
 
 ## Development and verification
