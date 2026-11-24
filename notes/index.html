@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Notes · catchmeif404</title>
+  <meta name="description" content="Engineering notes from catchmeif404: how figdex, Maskman, SantaPick and nightshift are built, deployed and run.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/">
+  <meta property="og:title" content="Notes">
+  <meta property="og:description" content="Engineering notes from catchmeif404: how figdex, Maskman, SantaPick and nightshift are built, deployed and run.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://catchmeif404.com/notes/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <h1>Notes</h1>
+    <p class="lead">What we learned building and running our products: design decisions, mistakes and the fixes that stuck.</p>
+    <ul class="cards">
+      <li class="card"><a href="/notes/verify-the-deploy-not-the-readme/"><span class="tag">Deploy</span><span class="card-title">Verify the deploy, not the README</span><span class="card-desc">Our documentation said pushes deployed the site, but the Cloudflare Pages connection did not exist. Here is what we do now to confirm that a deploy happened.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/tuning-bosses-with-a-bot/"><span class="tag">Maskman</span><span class="card-title">Tuning roguelike boss difficulty by letting a CPU player run the game</span><span class="card-desc">A CPU player played 36 Maskman roguelike runs, showed the first boss was a wall, and guided the changes in v1.24.1; here is what it could and could not tell us.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/secret-santa-without-login/"><span class="tag">SantaPick</span><span class="card-title">Running a Secret Santa without accounts</span><span class="card-desc">How SantaPick runs a Secret Santa with no sign-up: join codes, secret links, hashed tokens, and one function that decides what the browser may see.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/secret-santa-draw-algorithm/"><span class="tag">SantaPick</span><span class="card-title">How the Secret Santa draw works</span><span class="card-desc">The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">A real-time village on Durable Objects</span><span class="card-desc">How SantaPick&#x27;s village runs on Cloudflare: one Durable Object per village code, little stored state, enum greetings and a server-run snowball arena.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/rate-limits-without-storing-ips/"><span class="tag">SantaPick</span><span class="card-title">Rate limits without storing IP addresses</span><span class="card-desc">How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">A Railway deploy checklist from real failures</span><span class="card-desc">Five Railway mistakes that cost us debugging time, each with the symptom you will see and the fix that worked, from service names to unapplied variables.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/p2p-fighting-game-latency/"><span class="tag">Maskman</span><span class="card-title">Moving a browser fighting game from a relay to peer-to-peer</span><span class="card-desc">Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/nightshift-builder-and-reviewer/"><span class="tag">nightshift</span><span class="card-title">nightshift: one model builds, another reviews</span><span class="card-desc">nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/mobile-app-version-gate/"><span class="tag">figdex</span><span class="card-title">A version gate for old mobile app builds</span><span class="card-desc">figdex&#x27;s backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deterministic-simulation-rules/"><span class="tag">Maskman</span><span class="card-title">Keeping a fighting game simulation deterministic across browsers</span><span class="card-desc">Two Maskman players only exchange button bits, so both browsers must compute the same fight; these are the rules, the hash check and the tests that enforce it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deploy-on-tags-not-on-main/"><span class="tag">Deploy</span><span class="card-title">Deploy on tags, not on main</span><span class="card-desc">Why a push to main no longer ships our products, and how a single vX.Y.Z tag now deploys the frontend and the backend together.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/anonymous-play-counts/"><span class="tag">Maskman</span><span class="card-title">Counting plays in a browser game without tracking anyone</span><span class="card-desc">How Maskman counts visits and fights with an enum of event names and one Durable Object table, and batches events to stay under a free-plan request limit.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

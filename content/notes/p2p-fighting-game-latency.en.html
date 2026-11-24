@@ -1,0 +1,39 @@
+<!-- {"title": "Moving a browser fighting game from a relay to peer-to-peer", "description": "Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.", "date": "2026-11-24", "product": "Maskman"} -->
+<p>Maskman is a 1v1 fighting game that runs in the browser. Two players join a four-letter room code, and a Cloudflare Worker with one Durable Object per room connects them. The first version also sent every input through that room. It worked, and it was unplayable.</p>
+
+<h2>The relay was too slow from Korea</h2>
+<p>Online play is input lockstep: each side sends its button bits for every frame, both sides run the same simulation, and nothing else crosses the network. That design only works if inputs arrive within a few frames. A frame is 1/60 s, about 16.7 ms.</p>
+<p>When we measured v0.1.0 on 2026-11-13, a player in Korea was being routed to Cloudflare's Los Angeles location on the free plan. Input delay through the room was <strong>330 to 1,400 ms</strong>. At 60 frames a second that is 20 to 85 frames, which is a different game. You can check which location a connection uses with <code>curl -s https://maskman.catchmeif404.com/cdn-cgi/trace | grep colo</code>.</p>
+<p>Two players in the same country do not need their inputs to cross the Pacific twice, so we stopped sending the match through the server.</p>
+
+<h2>What the room does now</h2>
+<p>Since v0.2.0 the room server only does signaling. After both players say they are ready, it sends a <code>Start</code> message with seats, setups and stage. The two browsers then exchange WebRTC offer, answer and ICE candidates through the room, using three message kinds:</p>
+<pre><code>export enum SignalKind {
+  Offer = 'offer',
+  Answer = 'answer',
+  Ice = 'ice',
+}</code></pre>
+<p>Once the data channel opens, input bits go straight from one browser to the other. The room still holds the WebSockets, so it can tell a player the rival left.</p>
+<p>The channel is created with a fixed id on both sides, so no extra negotiation is needed, and it is <em>unordered but reliable</em>:</p>
+<pre><code>this.dc = this.pc.createDataChannel('game',
+  { negotiated: true, id: 0, ordered: false });</code></pre>
+<p>Every input still arrives, but a late packet does not block newer ones. For inputs that are batched per frame this is the useful trade. For discovering public addresses we use two free STUN servers, from Cloudflare and Google. They only tell each browser how it looks from the outside.</p>
+
+<h2>Picking an input delay from the measured path</h2>
+<p>The host sends five pings over whichever path is open, takes the 75th-percentile round trip, and converts it to frames:</p>
+<pre><code>const frames = Math.ceil(rttMs / 2 / FRAME_MS) + DELAY_MARGIN;
+return Math.min(MAX_DELAY, Math.max(MIN_DELAY, frames));</code></pre>
+<p>That is half the round trip in frames plus two frames of margin, clamped between 3 and 15 frames. The host sends the result to the guest in a <code>Go</code> message, and both sides use the same delay for the match. A dev hook, <code>window.stickDuel.net()</code>, shows whether the path is direct, the round trip and the chosen delay.</p>
+
+<h2>The relay fallback and its limit</h2>
+<p>Some networks never produce a direct route, for example some company networks and mobile carrier networks. The host waits 5 seconds for the data channel. If it has not opened, it measures over the WebSocket instead, and the match runs through the room as before.</p>
+<p>Every send goes through one function. It tries the data channel first and falls back to the socket if the channel is not open:</p>
+<pre><code>if (!this.path.send(text) &amp;&amp; this.ws.readyState === WebSocket.OPEN)
+  this.ws.send(text);</code></pre>
+<p>The fallback keeps the game playable in the sense that it connects and stays in sync, but it is still as slow as before. From Korea that means a high input delay. The fix would be a TURN server, which relays traffic for peers that cannot connect directly. We have not added one, so for those players the delay is the old one.</p>
+
+<p>Because both sides still run the same simulation from the same inputs, switching the path did not change the game rules. Every 120 frames each browser sends a hash of its world to the rival, and a mismatch sets a desync flag, so a lost or wrong input shows up quickly instead of as two different fights. The same check ran over the relay and runs over the direct channel.</p>
+
+<h2>What we did not measure</h2>
+<p>We have the v0.1.0 relay numbers and the design of the direct path. We do not have a published figure for direct-path round trips across real networks, and we have not measured how often players fall back to the relay. Both would be worth collecting before anyone relies on the claim that P2P is fast enough everywhere.</p>
+<p>The game is live at <a href="https://maskman.catchmeif404.com">maskman.catchmeif404.com</a>.</p>

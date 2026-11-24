@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Tuning roguelike boss difficulty by letting a CPU player run the game · catchmeif404</title>
+  <meta name="description" content="A CPU player played 36 Maskman roguelike runs, showed the first boss was a wall, and guided the changes in v1.24.1; here is what it could and could not tell us.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <meta property="og:title" content="Tuning roguelike boss difficulty by letting a CPU player run the game">
+  <meta property="og:description" content="A CPU player played 36 Maskman roguelike runs, showed the first boss was a wall, and guided the changes in v1.24.1; here is what it could and could not tell us.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Tuning roguelike boss difficulty by letting a CPU player run the game", "description": "A CPU player played 36 Maskman roguelike runs, showed the first boss was a wall, and guided the changes in v1.24.1; here is what it could and could not tell us.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/tuning-bosses-with-a-bot/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/tuning-bosses-with-a-bot/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">Maskman</span></p>
+      <h1>Tuning roguelike boss difficulty by letting a CPU player run the game</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>Maskman's roguelike mode has three acts, each ending in a boss. After the mask moves were reworked in v1.24, we wanted to know whether the runs were beatable, and playing them by hand was slow and noisy. The game already has a CPU fighter for single-player matches, so we put it in the player's seat and let it play.</p>
+
+<h2>The harness</h2>
+<p>The harness was a script that reproduced the brawl loop from <code>main.ts</code> and replaced the human with a <code>CpuBrain</code>, the same class that drives CPU opponents. It ran the fights without drawing anything and recorded where each run ended. It was a one-off tool: it is not kept in the test suite.</p>
+<p>It played 36 runs in all.</p>
+
+<h2>What it showed</h2>
+<p>The first act's boss was a wall. Between 57 and 85 percent of runs ended there. In a mode where the player is meant to feel growth over three acts, losing most runs at the first boss means the rest of the game goes unseen.</p>
+
+<h2>What we changed</h2>
+<p>v1.24.1 changed five things, all in numbers that sit in a few constants:</p>
+<table>
+<thead><tr><th>Setting</th><th>Act 1</th><th>Act 2</th><th>Act 3</th></tr></thead>
+<tbody>
+<tr><td>Boss power multiplier</td><td>0.55</td><td>0.65</td><td>0.85</td></tr>
+<tr><td>Boss health multiplier</td><td>0.8</td><td>0.85</td><td>1</td></tr>
+<tr><td>Minions before the boss</td><td>2</td><td>3</td><td>4</td></tr>
+</tbody>
+</table>
+<p>The act 2 boss also comes from a pool one tier lower than before. After a boss is beaten, half of the missing health is restored:</p>
+<pre><code>const BOSS_MEND = 0.5;
+// ...
+run.core.hp += Math.round(missing * BOSS_MEND * (halfHeal ? 0.5 : 1));</code></pre>
+<p>The minions matter as much as the multipliers: a boss fight is now "the boss plus an escort that grows with the act", and the boss is weaker early so that act 3 stays the real test. The heal after a boss gives the player a reason to take the fight.</p>
+<p>After the changes, with the strongest CPU, completed runs went from 0 of 12 to 4 of 12, and a full run lasts about 11 to 14 minutes.</p>
+
+<h2>What a bot cannot tell you</h2>
+<p>These numbers should be read for what they are. The CPU is not a person, and it does not play the way a person does. Full clears by the strongest CPU tell us that the path from act 1 to the end is open. They say little about whether a human finds it fun, or about how a beginner's first run feels.</p>
+<p>Several limits follow:</p>
+<ul>
+<li>Thirty-six runs is a small sample. A difference of one or two runs is noise.</li>
+<li>A bot finds walls and cliffs in a difficulty curve. It does not find boredom.</li>
+<li>The harness copied the brawl loop, so when the real loop changes the harness can drift. We did not keep it in the tests.</li>
+</ul>
+<p>The next release, v1.25, was tuned from bot play too, this time on the economy. Coins became a purse for one run that starts at zero, the shop gained a reroll (25 coins, plus 20 more for each repeat in the same shop), rare gear costs 2.5 times as much, and the shop offers an item that completes a synergy when only one piece is missing. The same caveat applies: the bot shows whether a path works, not whether it feels good.</p>
+<p>We used the bot to remove the wall, and we left the fine balance to later play and to the anonymous counts of where runs end, which now record deaths by act and position on the map.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/secret-santa-without-login/"><span class="tag">SantaPick</span><span class="card-title">Running a Secret Santa without accounts</span><span class="card-desc">How SantaPick runs a Secret Santa with no sign-up: join codes, secret links, hashed tokens, and one function that decides what the browser may see.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/secret-santa-draw-algorithm/"><span class="tag">SantaPick</span><span class="card-title">How the Secret Santa draw works</span><span class="card-desc">The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">A real-time village on Durable Objects</span><span class="card-desc">How SantaPick&#x27;s village runs on Cloudflare: one Durable Object per village code, little stored state, enum greetings and a server-run snowball arena.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

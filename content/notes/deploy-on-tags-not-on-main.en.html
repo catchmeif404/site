@@ -1,0 +1,42 @@
+<!-- {"title": "Deploy on tags, not on main", "description": "Why a push to main no longer ships our products, and how a single vX.Y.Z tag now deploys the frontend and the backend together.", "date": "2026-11-24", "product": "Deploy"} -->
+<p>For a while, merging to <code>main</code> and deploying to production were the same action in some of our repos. That is convenient until you are iterating on an unrelated feature and every push replaces what users are running. We moved to a rule where production changes only when a version tag is pushed.</p>
+
+<h2>The rule</h2>
+<p>Regular commits and pushes to <code>main</code> do not trigger a production deploy. A deploy happens only when a tag of the form <code>vX.Y.Z</code> (semver, for example <code>v1.0.0</code>) is pushed. The deploy workflows listen for tags, plus a manual trigger for reruns:</p>
+<pre><code>on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:</code></pre>
+<p>Cutting a release is two commands, run once <code>main</code> is in the state you want shipped:</p>
+<pre><code>git tag v1.0.0
+git push origin v1.0.0</code></pre>
+
+<h2>One shared tag for frontend and backend</h2>
+<p>Our default is one shared tag per repository that triggers the workflow of every deployable service. In AWS CostPilot (repo <code>aws-cost-calculator</code>) the frontend deploys to Cloudflare Workers and the backend deploys to Railway. Both workflows, <code>deploy-frontend.yml</code> and <code>deploy-backend.yml</code>, are triggered by the same <code>v*</code> tag, so the two halves of a release always come from the same commit.</p>
+<p>The alternative is a prefixed tag per service, such as <code>frontend-v1.0.0</code> or <code>worker-v1.0.0</code>. We only reach for that when services genuinely need to release independently of each other. For a frontend and a backend that share an API contract, one tag is simpler and removes a class of version-skew questions.</p>
+
+<h2>What changed in practice</h2>
+<p>The backend of AWS CostPilot used to deploy on every push to <code>main</code> through Railway's own GitHub integration. We turned that off in the Railway dashboard and replaced it with the tag-triggered workflow, which runs <code>railway up</code> through the Railway CLI. That workflow needs a <code>RAILWAY_TOKEN</code> repository secret, which is a Railway project token.</p>
+<p>Day to day this means:</p>
+<ul>
+<li>Merging a pull request is safe at any time. It changes <code>main</code>, not production.</li>
+<li>Work in progress can sit on <code>main</code> across several merges and be shipped later as one release.</li>
+<li>A deploy has a name. The tag tells you which commit is live, and rerunning an older tag through the manual trigger is a way back to a previous state.</li>
+<li>The moment of shipping is a deliberate step, not a side effect of a merge.</li>
+</ul>
+
+<p>One practical effect is on how we write commit messages and pull requests. Because nothing ships on merge, a half-finished change can land in a small step without anyone worrying that it is already live. The decision about whether the current state of <code>main</code> is good enough to ship is made once, at tag time, by looking at <code>main</code> as a whole instead of at each pull request in isolation. That is also when we look at database migrations, since a release with a migration is the one we most want to take deliberately.</p>
+
+<h2>Two places this did not apply cleanly</h2>
+<p>The first is the static site for catchmeif404.com. It deploys through Cloudflare Pages' own git integration and redeploys on every push to <code>main</code>. There is no build command and no output directory, because it is plain HTML, CSS and JavaScript. Moving it to an Actions-driven, tag-triggered deploy is a separate migration that we have not done. The tag rule describes where we are heading for every repo, not a claim that every repo is already there.</p>
+<p>The second is that turning off a deploy mechanism is easy to believe and hard to verify. On the backend we thought Railway's automatic deploy was off while every push to <code>main</code> kept starting a second deploy that raced the tag workflow. We cover how to check for that in <a href="/notes/railway-deploy-checklist/">the Railway checklist</a>.</p>
+
+<h2>Migrating an existing repo</h2>
+<p>When we touch a repo that still deploys from <code>main</code>, the steps are the same each time:</p>
+<ol>
+<li>Change the workflow trigger from <code>push: branches: [main]</code> to <code>push: tags: ['v*']</code> and add <code>workflow_dispatch</code>.</li>
+<li>Turn off the provider's own git-triggered deploy, so there is only one path to production.</li>
+<li>Check that it is really off, not just that you clicked the toggle.</li>
+<li>Push a tag, watch the workflow, and open the live URL to confirm what is running.</li>
+</ol>
+<p>The last step matters as much as the first three. A tag push that produces a green workflow is evidence that a workflow ran, not that the service changed. We wrote about that separately in <a href="/notes/verify-the-deploy-not-the-readme/">Verify the deploy, not the README</a>.</p>

@@ -1,0 +1,40 @@
+<!-- {"title": "Counting plays in a browser game without tracking anyone", "description": "How Maskman counts visits and fights with an enum of event names and one Durable Object table, and batches events to stay under a free-plan request limit.", "date": "2026-11-24", "product": "Maskman"} -->
+<p>We wanted to know whether anyone plays Maskman, which modes they use and how far they get in the roguelike, without building a profile of any player. The answer we landed on is to count events per day and store nothing about who caused them.</p>
+
+<h2>Events are an enum, and the server only knows the enum</h2>
+<p>The game and the Worker share one file, <code>src/net/stats.ts</code>. It defines every event as a member of <code>StatKey</code>:</p>
+<pre><code>export enum StatKey {
+  VisitNew = 'visit.new',
+  VisitSameDay = 'visit.sameday',
+  MatchOnline = 'match.online',
+  MatchRogue = 'match.rogue',
+  RogueStart = 'rogue.start',
+  RogueWon = 'rogue.won',
+  // ...
+}</code></pre>
+<p>The Worker rejects anything that is not a member. A request that carries a made-up key, a free-text field or an id adds nothing. The keys cover visits (first visit on this device, again the same day, the next day, within a week, later), language, touch or desktop, fights started per mode, roguelike starts and the act where a run ended, roughly how long a visit lasted, which title button was pressed, and whether a bug-report button was pressed. New events are added only by appending to the enum.</p>
+
+<h2>What is stored</h2>
+<p>A single Durable Object, <code>Stats</code>, holds a SQLite table:</p>
+<pre><code>CREATE TABLE IF NOT EXISTS counts (
+  day TEXT NOT NULL, key TEXT NOT NULL, n INTEGER NOT NULL,
+  PRIMARY KEY (day, key))</code></pre>
+<p>Each event adds to one row with <code>INSERT ... ON CONFLICT(day, key) DO UPDATE SET n = n + excluded.n</code>. The day is the date in Korea, because that is the time zone in which we read the numbers. A public endpoint, <code>/api/stats?days=N</code>, returns the totals per day, capped at 90 days.</p>
+<p>What the table does not hold: a player id, an IP address, a cookie or a timestamp finer than the day. Nothing in the request is written down except the key names and counts. The table cannot answer questions like "which visitors came back".</p>
+
+<h2>Return visits without an id</h2>
+<p>We do want to know whether people come back. The browser works that out locally. On the first visit it saves today's date in <code>localStorage</code>. On later loads it compares that date with today's and sends only the bucket name, such as <code>visit.d1</code> or <code>visit.d2_7</code>. The server never learns the date and never sees a value that links two visits. If storage is blocked, the visit counts as new.</p>
+
+<h2>Batching to stay under the free-plan limit</h2>
+<p>The first version sent one request per event, so a visit that played ten fights made more than ten requests. The Workers free plan has a daily request limit, and the same Worker serves the game files and the multiplayer rooms, so we did not want stats to use it up.</p>
+<p>Since v1.32 the page counts events in memory and sends them together:</p>
+<pre><code>export function track(key: StatKey): void {
+  pending.set(key, Math.min(MAX_STAT_COUNT, (pending.get(key) ?? 0) + 1));
+  held += 1;
+  if (held &gt;= FLUSH_AT) flush();
+}</code></pre>
+<p>The visit itself (kind, language, device) goes out once at load. Everything else waits until the page becomes hidden or is closed, then goes out as one body shaped like <code>{"c": {"match.cpu": 3, "rogue.start": 1}}</code>. A visit therefore costs about two requests however many fights it has. If a session stays open for a very long time, the held events are sent after 60 of them, and a single request can add at most 500 to any key.</p>
+<p>The send uses <code>navigator.sendBeacon</code> where available, so closing the tab does not cancel it, with a <code>fetch</code> using <code>keepalive</code> as the fallback. Failures are ignored on purpose: stats must never get in the way of the game. The Worker still understands the older format of one event per key, because pages that were open before the update kept sending it.</p>
+
+<h2>Limits of this approach</h2>
+<p>Counts are totals, so a few things are out of reach. We cannot tell one heavy player from many light ones, or separate bots from people. A page that is closed abruptly may lose its last batch. Keys are added by hand, and each new one needs a column wherever the numbers are copied into a report. In return, there is no player data to leak, and the table is small enough to read as a whole.</p>

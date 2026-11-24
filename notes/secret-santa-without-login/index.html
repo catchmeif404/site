@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Running a Secret Santa without accounts · catchmeif404</title>
+  <meta name="description" content="How SantaPick runs a Secret Santa with no sign-up: join codes, secret links, hashed tokens, and one function that decides what the browser may see.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/secret-santa-without-login/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/secret-santa-without-login/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/secret-santa-without-login/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/secret-santa-without-login/">
+  <meta property="og:title" content="Running a Secret Santa without accounts">
+  <meta property="og:description" content="How SantaPick runs a Secret Santa with no sign-up: join codes, secret links, hashed tokens, and one function that decides what the browser may see.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/secret-santa-without-login/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Running a Secret Santa without accounts", "description": "How SantaPick runs a Secret Santa with no sign-up: join codes, secret links, hashed tokens, and one function that decides what the browser may see.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/secret-santa-without-login/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/secret-santa-without-login/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">SantaPick</span></p>
+      <h1>Running a Secret Santa without accounts</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>A Secret Santa is a small, short-lived group activity. Asking twelve coworkers to create accounts, confirm emails and remember passwords for one December exchange is a good way to lose half of them. We built SantaPick (<a href="https://santapick.catchmeif404.com">santapick.catchmeif404.com</a>) with no login at all. That leaves two questions: how does the server know who is asking, and how does it keep the one secret the whole game depends on, who gives to whom?</p>
+
+<h2>Two kinds of link</h2>
+<p>Access comes in two shapes, and they do different jobs.</p>
+<ul>
+<li>A <strong>join code</strong> identifies a room. It is six characters, shared in a group chat, and the invite page lives at <code>/j/CODE</code>. Knowing it lets you add yourself to the room with a nickname and a wishlist. It does not let you read anything about the other people.</li>
+<li>A <strong>personal token</strong> identifies one person. It is the secret part of <code>/p/TOKEN</code>. Whoever holds the link is that person: they can edit their wishlist, open their gift box, send anonymous notes and guess their Santa.</li>
+</ul>
+<p>The two are generated differently on purpose. The join code is meant to be typed or read aloud, so its alphabet leaves out look-alike characters (no 0, O, 1 or I). The token is not meant to be typed by anyone, so it is 24 random bytes from <code>crypto.getRandomValues</code>, encoded as a 32-character URL-safe string.</p>
+<pre><code>export function newToken(): string {
+  return base64url(randomBytes(24));
+}
+
+export function newJoinCode(length = 6): string {
+  return Array.from(randomBytes(length), (b) =&gt; CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
+}</code></pre>
+
+<h2>Storing only hashes</h2>
+<p>The token is shown to its owner once, in their link, and then the server keeps only its SHA-256 hash. The <code>participants</code> table has a <code>token_hash</code> column with a unique constraint and no column for the token itself. Looking someone up means hashing the incoming token and querying by hash:</p>
+<pre><code>const hash = await hashToken(token);
+const me = await db()
+  .prepare("SELECT id, room_id, nickname, is_host FROM participants WHERE token_hash = ?")
+  .bind(hash)
+  .first&lt;ParticipantRow&gt;();
+if (!me) return fail(ApiError.NotFound);</code></pre>
+<p>Because the token is 192 bits of randomness rather than a human-chosen password, a plain unsalted SHA-256 is enough: there is nothing to guess and nothing to look up in a dictionary. What the hash buys us is that a database export, a stray query result or a debugging session does not hand anyone a working link. Our rule for the code base is simple: never log a token, and never return another person's token. Pages and rooms that have passed their retention date read as not found, and a daily job deletes them.</p>
+<p>The host is not special at the access level. The host's token is created when the room is created and works the same way; the host flag only enables host actions such as running the draw.</p>
+
+<h2>The server never sends your Santa early</h2>
+<p>Hashing protects the links. The harder secret is the draw result. Anyone with the page open could in principle read the browser's network traffic, so the only reliable rule is that the data is not in the response at all.</p>
+<p>We enforce that by having exactly one function, <code>loadView</code>, build the payload for the room page. Every client component receives a <code>RoomView</code>, a type that contains no tokens, no hashes of anyone but the viewer, and no field for "who is my Santa" before reveal day. Inside the function, the assignments are read, but only three things are derived from them:</p>
+<ol>
+<li>the viewer's own receiver, because they need to see whom they give to;</li>
+<li>the message thread with that receiver and with their Santa, as an unnamed anonymous side;</li>
+<li>two hints for the guessing game on exchange day: how many notes the Santa sent, and the length of the Santa's nickname.</li>
+</ol>
+<p>The Santa's name appears only inside the <code>reveal</code> branch, which is built only when the room has reached the reveal phase, the reveal mode allows it, and the viewer has already submitted a guess. Otherwise the payload carries <code>{ shown: false }</code>. The full list of pairs is added only when the host chose the mode that shows everyone.</p>
+<pre><code>const revealShown =
+  phase === Phase.Reveal &amp;&amp; room.reveal_mode !== RevealMode.None &amp;&amp; myGuess !== "";</code></pre>
+<p>Putting this in one place matters more than any clever check. If every page assembled its own response, the next feature would eventually add a field that leaks. With one builder and one type, a review of a new feature is a review of one function.</p>
+
+<h2>What this design costs</h2>
+<p>A link that works as a password has the usual weakness: if someone forwards it, they are you. There is no recovery either. A person who loses the link cannot sign back in with an email, because we have none. We accept that for a game that lasts a few weeks, and we keep the token out of everything that is not the page the owner opened. Writes are POST requests that must come from our own origin, which blocks cross-site form posts. And because the data is deleted 30 days after the exchange date, there is little to lose by the time a lost link would matter.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/secret-santa-draw-algorithm/"><span class="tag">SantaPick</span><span class="card-title">How the Secret Santa draw works</span><span class="card-desc">The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">A real-time village on Durable Objects</span><span class="card-desc">How SantaPick&#x27;s village runs on Cloudflare: one Durable Object per village code, little stored state, enum greetings and a server-run snowball arena.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/rate-limits-without-storing-ips/"><span class="tag">SantaPick</span><span class="card-title">Rate limits without storing IP addresses</span><span class="card-desc">How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

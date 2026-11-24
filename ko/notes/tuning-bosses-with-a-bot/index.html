@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기 · catchmeif404</title>
+  <meta name="description" content="CPU가 마스크맨 로그라이크를 36판 돌려 첫 보스가 벽이라는 걸 보여 줬고 v1.24.1에서 조정했어요. 봇 밸런싱이 알려 주는 것과 못 알려 주는 것을 정리했어요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/tuning-bosses-with-a-bot/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/tuning-bosses-with-a-bot/">
+  <meta property="og:title" content="CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기">
+  <meta property="og:description" content="CPU가 마스크맨 로그라이크를 36판 돌려 첫 보스가 벽이라는 걸 보여 줬고 v1.24.1에서 조정했어요. 봇 밸런싱이 알려 주는 것과 못 알려 주는 것을 정리했어요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/tuning-bosses-with-a-bot/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기", "description": "CPU가 마스크맨 로그라이크를 36판 돌려 첫 보스가 벽이라는 걸 보여 줬고 v1.24.1에서 조정했어요. 봇 밸런싱이 알려 주는 것과 못 알려 주는 것을 정리했어요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/tuning-bosses-with-a-bot/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/tuning-bosses-with-a-bot/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">Maskman</span></p>
+      <h1>CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>마스크맨의 로그라이크 모드는 3막이고, 막마다 보스가 있어요. v1.24에서 가면 기술을 손본 뒤, 이 모드가 깰 수 있는 난이도인지 알고 싶었어요. 사람이 직접 하면 느리고 결과도 들쭉날쭉했어요. 게임에는 이미 1인용 대전용 CPU 파이터가 있어서, 플레이어 자리에 CPU를 앉혀 돌려 봤어요.</p>
+
+<h2>하네스</h2>
+<p>하네스는 <code>main.ts</code>의 난전 루프를 그대로 따라 하고, 사람 대신 <code>CpuBrain</code>을 넣은 스크립트예요. <code>CpuBrain</code>은 CPU 상대를 움직이는 바로 그 클래스예요. 싸움을 화면 없이 돌려서 각 판이 어디서 끝났는지 기록했어요. 한 번 쓰고 마는 도구라서 테스트에는 넣지 않았어요.</p>
+<p>모두 36판을 돌렸어요.</p>
+
+<h2>드러난 것</h2>
+<p>1막 보스가 벽이었어요. 57~85%의 판이 거기서 끝났어요. 3막에 걸쳐 성장을 느끼게 하려는 모드에서 대부분이 첫 보스에서 지면, 나머지 내용은 아예 보이지 않아요.</p>
+
+<h2>바꾼 것</h2>
+<p>v1.24.1에서 다섯 가지를 바꿨어요. 모두 몇 개의 상수에 들어 있는 숫자예요.</p>
+<table>
+<thead><tr><th>항목</th><th>1막</th><th>2막</th><th>3막</th></tr></thead>
+<tbody>
+<tr><td>보스 힘 배율</td><td>0.55</td><td>0.65</td><td>0.85</td></tr>
+<tr><td>보스 체력 배율</td><td>0.8</td><td>0.85</td><td>1</td></tr>
+<tr><td>보스 앞 잡몹 수</td><td>2</td><td>3</td><td>4</td></tr>
+</tbody>
+</table>
+<p>2막 보스는 예전보다 한 단계 낮은 상대 풀에서 나와요. 보스를 이기면 잃은 체력의 절반을 회복해요.</p>
+<pre><code>const BOSS_MEND = 0.5;
+// ...
+run.core.hp += Math.round(missing * BOSS_MEND * (halfHeal ? 0.5 : 1));</code></pre>
+<p>배율만큼 잡몹도 중요해요. 이제 보스전은 보스 하나가 아니라 막이 올라갈수록 늘어나는 호위와 함께 싸우는 판이에요. 초반 보스는 약하게 두어서 3막이 진짜 시험으로 남게 했어요. 보스 뒤 회복은 플레이어가 그 싸움을 받아들일 이유를 줘요.</p>
+<p>바꾼 뒤 가장 센 CPU 기준으로 완주가 12판 중 0판에서 4판이 됐고, 한 판을 끝까지 하는 데 약 11~14분이 걸려요.</p>
+
+<h2>봇이 알려 주지 못하는 것</h2>
+<p>이 숫자는 있는 그대로 읽어야 해요. CPU는 사람이 아니고, 사람처럼 플레이하지도 않아요. 가장 센 CPU가 완주했다는 건 1막에서 끝까지 가는 길이 열려 있다는 뜻이에요. 사람이 재미있어하는지, 처음 하는 사람의 첫 판이 어떤지는 거의 말해 주지 않아요.</p>
+<p>그래서 이런 한계가 있어요.</p>
+<ul>
+<li>36판은 표본이 작아요. 한두 판 차이는 잡음이에요.</li>
+<li>봇은 난이도 곡선의 벽과 절벽을 찾아 줘요. 지루함은 찾지 못해요.</li>
+<li>하네스는 난전 루프를 복사한 것이라, 실제 루프가 바뀌면 어긋날 수 있어요. 그래서 테스트에는 남기지 않았어요.</li>
+</ul>
+<p>다음 릴리스인 v1.25도 봇 플레이 결과를 보고 손봤고, 이번에는 경제 쪽이었어요. 코인은 한 번의 모험 동안만 쓰는 주머니로 바뀌어 0에서 시작하고, 상점에는 새로 진열 기능(25코인, 같은 상점에서 누를 때마다 20씩 추가)이 생겼어요. 희귀 장비는 2.5배 가격이고, 시너지까지 한 조각만 남았으면 그 조각을 채우는 물건이 진열돼요. 한계는 같아요. 봇은 길이 통하는지는 보여 주지만 재미있는지는 보여 주지 않아요.</p>
+<p>봇은 벽을 없애는 데 썼고, 세밀한 균형은 이후의 플레이와 익명 집계에 맡겼어요. 집계에는 이제 모험이 어느 막, 지도의 어느 구간에서 끝났는지가 기록돼요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/secret-santa-without-login/"><span class="tag">SantaPick</span><span class="card-title">로그인 없이 마니또 돌리기</span><span class="card-desc">산타픽이 가입 없이 마니또를 돌리는 방법: 참가 코드와 개인 링크, 해시로만 저장하는 토큰, 공개 전에는 산타를 보내지 않는 규칙이에요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/secret-santa-draw-algorithm/"><span class="tag">SantaPick</span><span class="card-title">마니또 추첨은 이렇게 돌아가요</span><span class="card-desc">산타픽 추첨은 자기 자신을 뽑지 않고, 서로 뽑히면 안 되는 쌍을 지키며, 불가능한 방은 정확히 알려 줘요. 알고리즘과 테스트를 설명해요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">Durable Object로 만든 실시간 마을</span><span class="card-desc">마을 코드당 Durable Object 하나, 최소한의 저장, enum 인사, 서버가 돌리는 눈싸움까지 산타픽 실시간 마을의 구조예요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

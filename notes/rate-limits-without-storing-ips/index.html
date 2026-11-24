@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Rate limits without storing IP addresses · catchmeif404</title>
+  <meta name="description" content="How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <meta property="og:title" content="Rate limits without storing IP addresses">
+  <meta property="og:description" content="How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Rate limits without storing IP addresses", "description": "How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/rate-limits-without-storing-ips/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/rate-limits-without-storing-ips/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">SantaPick</span></p>
+      <h1>Rate limits without storing IP addresses</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>A site with no accounts has no obvious handle for abuse. Anyone can create rooms, villages or letters as fast as a script can send requests, and there is no user to ban. The usual answer is to limit by IP address, but that means keeping IP addresses, and we would rather not keep data about visitors that we cannot justify. This note covers what we did instead for SantaPick, and where we chose not to limit at all.</p>
+
+<h2>Hourly counters keyed by a hash</h2>
+<p>Creation endpoints (rooms, decorated rooms, couple quizzes, villages, joining a village, saving a test result) are capped per network per hour. The server never stores the address. It hashes it first, with the same SHA-256 helper used for tokens, over the string <code>ip:&lt;address&gt;</code>, and stores that:</p>
+<pre><code>export const ipHashOf = (request: Request) =&gt;
+  hashToken(`ip:${request.headers.get("cf-connecting-ip") ?? "local"}`);</code></pre>
+<p>The counter table has one row per bucket, IP hash and UTC hour:</p>
+<pre><code>CREATE TABLE rate_limits (
+  bucket TEXT NOT NULL,
+  ip_hash TEXT NOT NULL,
+  hour TEXT NOT NULL,   -- YYYY-MM-DDTHH (UTC)
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket, ip_hash, hour)
+);</code></pre>
+<p>The limits are numbers in one constants object: 30 new rooms per hour, 30 decorated rooms, 30 couple quizzes, 20 villages, 60 village joins, 60 test results. They are meant to stop scripts, not to inconvenience a household or an office behind one address.</p>
+
+<h2>One statement, no race</h2>
+<p>The naive version reads the count, compares it to the cap, then writes the new count. Two requests arriving together both read 29 and both pass. We avoid that by making the check and the increment the same statement:</p>
+<pre><code>INSERT INTO rate_limits (bucket, ip_hash, hour, n) VALUES (?, ?, ?, 1)
+ON CONFLICT (bucket, ip_hash, hour) DO UPDATE SET n = n + 1 WHERE n &lt; ?</code></pre>
+<p>The first request of an hour inserts a row with 1. Later ones hit the conflict and update the row, but only while <code>n</code> is still below the cap. When the cap is reached, the <code>WHERE</code> makes the update touch nothing. The code then reads the number of changed rows from the result: one means the request was counted and may continue, zero means refuse with a 429. Because the database serialises that single statement, concurrent requests cannot both squeeze in under the limit.</p>
+
+<h2>Device keys for the rest</h2>
+<p>Some limits are about a device, not a network. The browser makes a random key and keeps it locally. The server never stores that key either, only its hash. Villages and houses use it to enforce one of each per device, bells (our play money, never sold) keep a wallet under the key's hash, and a deco letter is limited to one per visitor per room by hashing the room id together with the key.</p>
+<p>These keys are easy to discard, so they are a convenience limit rather than a security boundary, and we pair them with a network limit where it matters. For example, the sponsor-card reward is capped at three a day with a 15-second minimum play time checked on the server, and the number of new wallets per network per day is capped as well. We set that last cap loosely, because mobile networks share addresses between many people.</p>
+
+<h2>What gets deleted, and when</h2>
+<p>The counter rows are useful only for the hour they cover. The daily job at 03:00 KST deletes rate-limit rows from before today, along with expired rooms, villages and everything inside them. Rooms themselves are kept until 30 days after their exchange date. A few IP hashes live longer than the counters, attached to rows that need them: letters and letter reports in decorated rooms carry one, so the per-network letter cap and one-report-per-network rule can work, and wallets carry one for the new-wallet cap. They go when the row goes.</p>
+
+<h2>The counter that has no limit</h2>
+<p>The visit counter is the exception. A visit is one tab's first page load, and the endpoint adds one to a per-day total. It is a POST that must come from our own origin, and that is the only check. We deliberately did not add a per-IP limit, because limiting visits would mean writing an IP hash for every visitor, including people who never create anything, and the privacy policy does not cover that. The cost of the choice is that a script can inflate the number. We accept that: the figure is for our own sense of scale, nothing depends on it, and a number we can shrug at is cheaper than a log of everyone who looked at the page.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">A Railway deploy checklist from real failures</span><span class="card-desc">Five Railway mistakes that cost us debugging time, each with the symptom you will see and the fix that worked, from service names to unapplied variables.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/p2p-fighting-game-latency/"><span class="tag">Maskman</span><span class="card-title">Moving a browser fighting game from a relay to peer-to-peer</span><span class="card-desc">Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/nightshift-builder-and-reviewer/"><span class="tag">nightshift</span><span class="card-title">nightshift: one model builds, another reviews</span><span class="card-desc">nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

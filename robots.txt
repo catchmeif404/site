@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /content/
+Disallow: /tools/
+
+Sitemap: https://catchmeif404.com/sitemap.xml

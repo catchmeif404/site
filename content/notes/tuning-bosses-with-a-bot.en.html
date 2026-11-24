@@ -1,0 +1,37 @@
+<!-- {"title": "Tuning roguelike boss difficulty by letting a CPU player run the game", "description": "A CPU player played 36 Maskman roguelike runs, showed the first boss was a wall, and guided the changes in v1.24.1; here is what it could and could not tell us.", "date": "2026-11-24", "product": "Maskman"} -->
+<p>Maskman's roguelike mode has three acts, each ending in a boss. After the mask moves were reworked in v1.24, we wanted to know whether the runs were beatable, and playing them by hand was slow and noisy. The game already has a CPU fighter for single-player matches, so we put it in the player's seat and let it play.</p>
+
+<h2>The harness</h2>
+<p>The harness was a script that reproduced the brawl loop from <code>main.ts</code> and replaced the human with a <code>CpuBrain</code>, the same class that drives CPU opponents. It ran the fights without drawing anything and recorded where each run ended. It was a one-off tool: it is not kept in the test suite.</p>
+<p>It played 36 runs in all.</p>
+
+<h2>What it showed</h2>
+<p>The first act's boss was a wall. Between 57 and 85 percent of runs ended there. In a mode where the player is meant to feel growth over three acts, losing most runs at the first boss means the rest of the game goes unseen.</p>
+
+<h2>What we changed</h2>
+<p>v1.24.1 changed five things, all in numbers that sit in a few constants:</p>
+<table>
+<thead><tr><th>Setting</th><th>Act 1</th><th>Act 2</th><th>Act 3</th></tr></thead>
+<tbody>
+<tr><td>Boss power multiplier</td><td>0.55</td><td>0.65</td><td>0.85</td></tr>
+<tr><td>Boss health multiplier</td><td>0.8</td><td>0.85</td><td>1</td></tr>
+<tr><td>Minions before the boss</td><td>2</td><td>3</td><td>4</td></tr>
+</tbody>
+</table>
+<p>The act 2 boss also comes from a pool one tier lower than before. After a boss is beaten, half of the missing health is restored:</p>
+<pre><code>const BOSS_MEND = 0.5;
+// ...
+run.core.hp += Math.round(missing * BOSS_MEND * (halfHeal ? 0.5 : 1));</code></pre>
+<p>The minions matter as much as the multipliers: a boss fight is now "the boss plus an escort that grows with the act", and the boss is weaker early so that act 3 stays the real test. The heal after a boss gives the player a reason to take the fight.</p>
+<p>After the changes, with the strongest CPU, completed runs went from 0 of 12 to 4 of 12, and a full run lasts about 11 to 14 minutes.</p>
+
+<h2>What a bot cannot tell you</h2>
+<p>These numbers should be read for what they are. The CPU is not a person, and it does not play the way a person does. Full clears by the strongest CPU tell us that the path from act 1 to the end is open. They say little about whether a human finds it fun, or about how a beginner's first run feels.</p>
+<p>Several limits follow:</p>
+<ul>
+<li>Thirty-six runs is a small sample. A difference of one or two runs is noise.</li>
+<li>A bot finds walls and cliffs in a difficulty curve. It does not find boredom.</li>
+<li>The harness copied the brawl loop, so when the real loop changes the harness can drift. We did not keep it in the tests.</li>
+</ul>
+<p>The next release, v1.25, was tuned from bot play too, this time on the economy. Coins became a purse for one run that starts at zero, the shop gained a reroll (25 coins, plus 20 more for each repeat in the same shop), rare gear costs 2.5 times as much, and the shop offers an item that completes a synergy when only one piece is missing. The same caveat applies: the bot shows whether a path works, not whether it feels good.</p>
+<p>We used the bot to remove the wall, and we left the fine balance to later play and to the anonymous counts of where runs end, which now record deaths by act and position on the map.</p>

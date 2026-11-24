@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Durable Object로 만든 실시간 마을 · catchmeif404</title>
+  <meta name="description" content="마을 코드당 Durable Object 하나, 최소한의 저장, enum 인사, 서버가 돌리는 눈싸움까지 산타픽 실시간 마을의 구조예요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/realtime-village-durable-object/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/realtime-village-durable-object/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/realtime-village-durable-object/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/realtime-village-durable-object/">
+  <meta property="og:title" content="Durable Object로 만든 실시간 마을">
+  <meta property="og:description" content="마을 코드당 Durable Object 하나, 최소한의 저장, enum 인사, 서버가 돌리는 눈싸움까지 산타픽 실시간 마을의 구조예요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/realtime-village-durable-object/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Durable Object로 만든 실시간 마을", "description": "마을 코드당 Durable Object 하나, 최소한의 저장, enum 인사, 서버가 돌리는 눈싸움까지 산타픽 실시간 마을의 구조예요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/realtime-village-durable-object/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/realtime-village-durable-object/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">SantaPick</span></p>
+      <h1>Durable Object로 만든 실시간 마을</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>산타픽의 마을은 친구들이 걸어 다니고, 인사하고, 모닥불 앞에 앉고, 눈싸움도 하는 공유 3D 공간이에요. 계정이 없고 클라우드플레어 Workers에서 돌아가요. 게임 서버를 따로 돌리지 않고, 마을에 필요한 것 이상은 저장하지 않으면서 실시간으로 서로 보이게 하고 싶었어요. 마을마다 Durable Object 하나를 두는 방식이 잘 맞았어요.</p>
+
+<h2>마을 코드당 객체 하나</h2>
+<p>마을은 여섯 글자 코드로 구분되는 최대 20명의 친구 모임이에요. Worker 진입점이 <code>/api/village/ws</code>의 웹소켓 업그레이드를 받아요. Origin 헤더를 확인하고, 코드의 형식을 확인하고, 데이터베이스에 그 마을이 있고 만료되지 않았는지 확인해요. 그다음에야 코드에서 만든 id의 Durable Object로 요청을 넘겨요.</p>
+<pre><code>const stub = env.VILLAGE.get(env.VILLAGE.idFromName(code));
+return stub.fetch(request);</code></pre>
+<p>그래서 같은 마을 사람은 어디서 접속하든 같은 객체에 닿고, 아무도 안 오는 마을은 비용이 들지 않아요. 객체는 웹소켓 하이버네이션을 써서 연결이 놀고 있을 때는 계속 돌지 않아요. 소켓은 마을의 집터 수와 같은 20개까지만 받아요.</p>
+
+<h2>객체가 저장하는 것과 저장하지 않는 것</h2>
+<p>사람은 소켓의 attachment, 곧 이름과 모습과 위치를 담은 작은 기록으로만 존재해요. 마을에 누가 있는지는 저장소에 쓰지 않으니, 재시작하면 모두 다시 접속하면 돼요.</p>
+<p>재시작을 넘겨야 하는 것만 내구성 저장소에 둬요. 열려 있는 눈싸움방과 켜진 모닥불이에요. 모닥불에는 꺼질 시각을 저장하고, 알람이 10분 뒤에 꺼요. 진행 중인 벨 대결의 id도 따로 적어 두어서, 게임 도중 객체가 사라지면 걸어 둔 벨을 돌려줄 수 있어요.</p>
+<p>코인, 아바타 모습, 방문한 집 목록은 브라우저 localStorage에만 있어요. 서버에는 해시한 기기 키로 구분하는 작은 놀이용 지갑이 따로 있지만, 허브가 위치를 중계하는 데 브라우저의 소지품은 필요 없어요.</p>
+
+<h2>자유 텍스트는 없어요</h2>
+<p>실시간 소셜 기능은 관리할 일을 부르니까, 그 원인을 없앴어요. 마을에서는 메시지를 보낼 수 없어요. 인사는 정해진 enum의 값(하트, 손 흔들기, "메리 크리스마스" 등)이고, 서버는 그 값일 때만 받아요.</p>
+<pre><code>export const isGreeting = (v: unknown): v is Greeting =&gt;
+  typeof v === "string" &amp;&amp; (Object.values(Greeting) as string[]).includes(v);</code></pre>
+<p>인사는 한 사람이 1.2초 이상 간격을 두어야 보낼 수 있어요. 방문자가 직접 쓰는 글은 입장할 때 정하는 표시 이름뿐이고, 최대 열 글자이며 정리한 뒤 금지어 목록과 대조해요. 모닥불이나 광장 소파에 앉는 동작은 메시지를 아예 보내지 않아요. 앉는 사람이 자리 위치에 정확히 서 있고, 모든 클라이언트가 자리에 서 있는 사람을 앉은 모습으로 그려요.</p>
+<p>소켓마다 토큰 버킷도 있어요. 일반 메시지는 초당 40개에 버스트 80개이고, 저장소를 쓰거나 데이터베이스를 부르거나 모두에게 알리는 메시지는 초당 1.5개에 버스트 5개예요.</p>
+
+<h2>눈싸움장은 서버가 게임을 돌려요</h2>
+<p>눈싸움장은 눈벽이 있는 네모난 경기장에 두 명에서 여덟 명이 들어가요. 결과는 클라이언트를 믿지 않아요. 각 클라이언트는 서 있는 위치와 바라보는 방향을 초당 12번쯤 보내요. 시뮬레이션은 서버가 돌리고, 브라우저에서 봇과 연습할 때 쓰는 것과 같은 클래스예요. 그래서 던지기와 맞히기를 두 곳에서 같은 규칙으로 판정해요.</p>
+<ul>
+<li>보고된 위치는 마지막 위치 이후 걸을 수 있었던 거리만큼만 받아들여요. 네트워크 흔들림을 위한 약간의 여유가 있어요. 순간이동을 요청해도 걷기 예산만큼만 움직여요.</li>
+<li>던지려면 눈덩이가 있어야 하고 던지기 사이에 최소 간격이 있어요. 맞으면 잠깐 얼어붙어요.</li>
+<li>객체는 경기를 초당 30번 진행하고, 선수 위치와 날아가는 눈덩이와 맞힌 기록을 담은 상태를 초당 15번, 맞힌 순간에는 바로 보내요.</li>
+</ul>
+<pre><code>const hits = match.sim.step(TICK_MS / 1000, now);
+if (hits.length &gt; 0 || now - match.sentAt &gt;= 1000 / ARENA.sendHz) {
+  // send ArenaState to every member
+}</code></pre>
+<p>클라이언트는 서버보다 조금 뒤에 있을 수 있어서, 계속 걷는 사람이 업데이트마다 뒤로 끌려가면 안 돼요. 그래서 클라이언트는 자신이 보낸 최근 위치를 짧게 기록해 두고, 서버가 알려준 위치가 그중 어느 것과도 맞지 않을 때만 서버 위치로 옮겨요. 지연과, 벽이나 얼어붙음 같은 진짜 보정을 이렇게 구분해요.</p>
+<p>타이머는 경기가 진행되는 동안만 돌고 마지막 경기가 끝나면 멈춰서, 객체가 다시 잠들 수 있어요. 벨 대결도 두 명이 같은 눈싸움장을 쓰고, 걸어 둔 벨은 경기 동안 데이터베이스에 있다가 서버가 한 번만 지급해요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/rate-limits-without-storing-ips/"><span class="tag">SantaPick</span><span class="card-title">IP를 저장하지 않는 요청 제한</span><span class="card-desc">로그인 없는 사이트에서 산타픽이 스팸을 막는 방법이에요. 해시한 시간대별 카운터, 한 문장 upsert, 기기 키, 제한 없는 방문 카운터를 다뤄요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">실패에서 나온 Railway 배포 체크리스트</span><span class="card-desc">서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/p2p-fighting-game-latency/"><span class="tag">Maskman</span><span class="card-title">브라우저 격투 게임을 서버 중계에서 P2P로 옮긴 이유</span><span class="card-desc">한국에서 서버 중계 입력이 0.33~1.4초 걸려, 마스크맨은 대전 입력을 WebRTC로 직접 보내고 방 서버는 연결만 맡아요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>A version gate for old mobile app builds · catchmeif404</title>
+  <meta name="description" content="figdex&#x27;s backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/mobile-app-version-gate/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/mobile-app-version-gate/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/mobile-app-version-gate/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/mobile-app-version-gate/">
+  <meta property="og:title" content="A version gate for old mobile app builds">
+  <meta property="og:description" content="figdex&#x27;s backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/mobile-app-version-gate/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "A version gate for old mobile app builds", "description": "figdex's backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/mobile-app-version-gate/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/mobile-app-version-gate/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">figdex</span></p>
+      <h1>A version gate for old mobile app builds</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>A web page updates the next time someone loads it. A mobile app does not: people keep running whatever build they installed, and the backend has to keep answering them. When an API change breaks an old build, or when we simply want people to move to a new release, the server needs a way to say so. In figdex, the figure collection app, the backend serves two version numbers per platform for this: a minimum and a latest.</p>
+
+<h2>Two values, two different effects</h2>
+<p>The app asks the backend for its release configuration at <code>GET /v1/app/config</code>. The response carries a <code>minVersion</code> and a <code>latestVersion</code> for the platform, plus the store URL. The app compares its own version against both.</p>
+<table>
+<thead><tr><th>Value</th><th>App older than it</th><th>What the user sees</th></tr></thead>
+<tbody>
+<tr><td><code>minVersion</code></td><td>Blocked</td><td>The app stops on an update screen, and the server also refuses its API calls with HTTP 426.</td></tr>
+<tr><td><code>latestVersion</code></td><td>Still works</td><td>A notice that can be dismissed.</td></tr>
+</tbody>
+</table>
+<p>Latest is an invitation. Minimum is a requirement. They are separate on purpose, so that we can nudge everyone toward a new release for weeks without cutting anyone off, and keep the hard stop for the day an old build can no longer work.</p>
+
+<h2>The server enforces it too</h2>
+<p>An app that skips its config screen, whether it was left open for days or the config request failed, must not slip through. So a backend filter checks every request under <code>/v1/</code>. The app sends its version in an <code>X-App-Version</code> header and its platform in <code>X-App-Platform</code>. If the version is lower than that platform's minimum, the filter answers <code>426 UPGRADE_REQUIRED</code>. The config endpoint itself is exempt so the app can still read the message. Requests without a version header, such as a web build or <code>curl</code>, are not version-checked.</p>
+<p>The same filter handles maintenance mode, which answers <code>503 MAINTENANCE</code>. That is a separate switch from the version gate.</p>
+<p>Two details keep the gate from hurting people by mistake. Only the version name is compared, such as <code>1.2.3</code> from the app's <code>pubspec</code> version, and the build number after the plus sign is ignored. And a version that cannot be parsed is treated as unknown: the app does not compare it and does not block, so a bad config cannot lock everyone out.</p>
+
+<h2>Why latest waits for the store</h2>
+<p>The rule written next to the configuration is plain: after a release, force an update only after confirming that the new build is open in the store. Raising the minimum first blocks people who have nothing to download. The same reasoning applies to latest. A notice that says "a new version is available" is a promise, and if the store has not made the build available yet, tapping through leads to the old version.</p>
+<p>For Android this is automated. After the release workflow uploads the app to Google Play, it asks the Play Developer API whether the version code now shows on the internal track, waiting up to 20 minutes. Only when it does, the workflow calls an internal endpoint, <code>POST /v1/internal/app-release/latest</code>, to raise <code>latestVersion</code>. That step runs only if a release key is configured. If the build is not found in time, or no key exists, the workflow leaves a notice and skips the step without failing, and a person raises the value by hand in the admin screen. iOS goes through the same admin screen.</p>
+<p>The endpoint is conservative. Sending the current value changes nothing. Sending a lower one is rejected with a 409, so latest only moves forward. It also rewrites only the latest value, so it cannot undo a minimum version or maintenance setting that an admin just saved. Each change is written to the audit log.</p>
+
+<h2>Raising the minimum is a later, separate decision</h2>
+<p>The automatic step never touches <code>minVersion</code>. It shows only the dismissible notice. A forced update is a deliberate act, done after the new build is confirmed in the store, and it is the one that actually closes the door on old builds. Keeping the two values apart means the routine part of a release cannot, by itself, lock anyone out.</p>
+<p>The initial values come from environment variables, <code>FIGDEX_ANDROID_MIN_VERSION</code> and its latest, iOS and store-URL counterparts, defaulting to <code>1.0.0</code>. They only apply until an admin saves the settings once. After that, the stored values win.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/deterministic-simulation-rules/"><span class="tag">Maskman</span><span class="card-title">Keeping a fighting game simulation deterministic across browsers</span><span class="card-desc">Two Maskman players only exchange button bits, so both browsers must compute the same fight; these are the rules, the hash check and the tests that enforce it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deploy-on-tags-not-on-main/"><span class="tag">Deploy</span><span class="card-title">Deploy on tags, not on main</span><span class="card-desc">Why a push to main no longer ships our products, and how a single vX.Y.Z tag now deploys the frontend and the backend together.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/anonymous-play-counts/"><span class="tag">Maskman</span><span class="card-title">Counting plays in a browser game without tracking anyone</span><span class="card-desc">How Maskman counts visits and fights with an enum of event names and one Durable Object table, and batches events to stay under a free-plan request limit.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

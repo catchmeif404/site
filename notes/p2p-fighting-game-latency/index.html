@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>Moving a browser fighting game from a relay to peer-to-peer · catchmeif404</title>
+  <meta name="description" content="Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/p2p-fighting-game-latency/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/p2p-fighting-game-latency/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/p2p-fighting-game-latency/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/p2p-fighting-game-latency/">
+  <meta property="og:title" content="Moving a browser fighting game from a relay to peer-to-peer">
+  <meta property="og:description" content="Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/p2p-fighting-game-latency/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Moving a browser fighting game from a relay to peer-to-peer", "description": "Relayed inputs took 330 to 1,400 ms from Korea, so Maskman now sends match traffic over WebRTC and keeps the room server for signaling only.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/p2p-fighting-game-latency/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/p2p-fighting-game-latency/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">Maskman</span></p>
+      <h1>Moving a browser fighting game from a relay to peer-to-peer</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>Maskman is a 1v1 fighting game that runs in the browser. Two players join a four-letter room code, and a Cloudflare Worker with one Durable Object per room connects them. The first version also sent every input through that room. It worked, and it was unplayable.</p>
+
+<h2>The relay was too slow from Korea</h2>
+<p>Online play is input lockstep: each side sends its button bits for every frame, both sides run the same simulation, and nothing else crosses the network. That design only works if inputs arrive within a few frames. A frame is 1/60 s, about 16.7 ms.</p>
+<p>When we measured v0.1.0 on 2026-11-13, a player in Korea was being routed to Cloudflare's Los Angeles location on the free plan. Input delay through the room was <strong>330 to 1,400 ms</strong>. At 60 frames a second that is 20 to 85 frames, which is a different game. You can check which location a connection uses with <code>curl -s https://maskman.catchmeif404.com/cdn-cgi/trace | grep colo</code>.</p>
+<p>Two players in the same country do not need their inputs to cross the Pacific twice, so we stopped sending the match through the server.</p>
+
+<h2>What the room does now</h2>
+<p>Since v0.2.0 the room server only does signaling. After both players say they are ready, it sends a <code>Start</code> message with seats, setups and stage. The two browsers then exchange WebRTC offer, answer and ICE candidates through the room, using three message kinds:</p>
+<pre><code>export enum SignalKind {
+  Offer = 'offer',
+  Answer = 'answer',
+  Ice = 'ice',
+}</code></pre>
+<p>Once the data channel opens, input bits go straight from one browser to the other. The room still holds the WebSockets, so it can tell a player the rival left.</p>
+<p>The channel is created with a fixed id on both sides, so no extra negotiation is needed, and it is <em>unordered but reliable</em>:</p>
+<pre><code>this.dc = this.pc.createDataChannel('game',
+  { negotiated: true, id: 0, ordered: false });</code></pre>
+<p>Every input still arrives, but a late packet does not block newer ones. For inputs that are batched per frame this is the useful trade. For discovering public addresses we use two free STUN servers, from Cloudflare and Google. They only tell each browser how it looks from the outside.</p>
+
+<h2>Picking an input delay from the measured path</h2>
+<p>The host sends five pings over whichever path is open, takes the 75th-percentile round trip, and converts it to frames:</p>
+<pre><code>const frames = Math.ceil(rttMs / 2 / FRAME_MS) + DELAY_MARGIN;
+return Math.min(MAX_DELAY, Math.max(MIN_DELAY, frames));</code></pre>
+<p>That is half the round trip in frames plus two frames of margin, clamped between 3 and 15 frames. The host sends the result to the guest in a <code>Go</code> message, and both sides use the same delay for the match. A dev hook, <code>window.stickDuel.net()</code>, shows whether the path is direct, the round trip and the chosen delay.</p>
+
+<h2>The relay fallback and its limit</h2>
+<p>Some networks never produce a direct route, for example some company networks and mobile carrier networks. The host waits 5 seconds for the data channel. If it has not opened, it measures over the WebSocket instead, and the match runs through the room as before.</p>
+<p>Every send goes through one function. It tries the data channel first and falls back to the socket if the channel is not open:</p>
+<pre><code>if (!this.path.send(text) &amp;&amp; this.ws.readyState === WebSocket.OPEN)
+  this.ws.send(text);</code></pre>
+<p>The fallback keeps the game playable in the sense that it connects and stays in sync, but it is still as slow as before. From Korea that means a high input delay. The fix would be a TURN server, which relays traffic for peers that cannot connect directly. We have not added one, so for those players the delay is the old one.</p>
+
+<p>Because both sides still run the same simulation from the same inputs, switching the path did not change the game rules. Every 120 frames each browser sends a hash of its world to the rival, and a mismatch sets a desync flag, so a lost or wrong input shows up quickly instead of as two different fights. The same check ran over the relay and runs over the direct channel.</p>
+
+<h2>What we did not measure</h2>
+<p>We have the v0.1.0 relay numbers and the design of the direct path. We do not have a published figure for direct-path round trips across real networks, and we have not measured how often players fall back to the relay. Both would be worth collecting before anyone relies on the claim that P2P is fast enough everywhere.</p>
+<p>The game is live at <a href="https://maskman.catchmeif404.com">maskman.catchmeif404.com</a>.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/nightshift-builder-and-reviewer/"><span class="tag">nightshift</span><span class="card-title">nightshift: one model builds, another reviews</span><span class="card-desc">nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/mobile-app-version-gate/"><span class="tag">figdex</span><span class="card-title">A version gate for old mobile app builds</span><span class="card-desc">figdex&#x27;s backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deterministic-simulation-rules/"><span class="tag">Maskman</span><span class="card-title">Keeping a fighting game simulation deterministic across browsers</span><span class="card-desc">Two Maskman players only exchange button bits, so both browsers must compute the same fight; these are the rules, the hash check and the tests that enforce it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

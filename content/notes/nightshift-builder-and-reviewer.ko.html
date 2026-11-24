@@ -1,0 +1,37 @@
+<!-- {"title": "nightshift: 한 모델이 만들고 다른 모델이 검토해요", "description": "nightshift는 보드의 티켓마다 한 모델이 브랜치에서 구현하고 다른 모델이 검토하는 오픈소스 러너예요. 사람이 정할 일은 사람에게 남겨요.", "date": "2026-11-24", "product": "nightshift"} -->
+<p>코딩 에이전트에게 아무도 보지 않는 동안 일을 맡기면 시시한 방식으로 문제가 생겨요. 내 체크아웃을 건드리거나, 결과를 어디에도 적지 않고 성공했다고 말하거나, 노트북이 잠들면 멈추거나, 돈이 걸린 변경을 그냥 머지해 버려요. nightshift는 에이전트 주변에서 이런 경우를 맡는 작은 도구예요. MIT 라이선스의 오픈소스이고 npm에는 <code>@catchmeif404/nightshift</code>로 올라가 있어요. 소스는 <a href="https://github.com/catchmeif404/nightshift">github.com/catchmeif404/nightshift</a>에 있고, README는 현재 상태를 초기 단계(0.1)라고 적고 있어요.</p>
+
+<h2>무엇이고, 무엇이 아닌가요</h2>
+<p>nightshift는 내 컴퓨터에서 도는 무인 개발 큐예요. 보드에 티켓을 올리면 티켓마다 코딩 에이전트의 개발자 실행을 시작해요. 기본은 Claude Code <code>sonnet</code>이고 Codex도 쓸 수 있어요. 개발자는 자기 브랜치에서 변경을 만들어요. 그다음 별도의 검토자 실행이 시작되는데, 기본은 <code>opus</code>예요. 검토자는 작은 문제는 직접 고치고, 큰 문제는 한 번 더 돌려보내고, 사람이 정해야 하는 것은 멈춰 세워요.</p>
+<p>nightshift는 코드를 직접 쓰지 않아요. 구현과 검토는 에이전트가 하고, nightshift는 다음 티켓을 고르고, 티켓마다 git worktree를 따로 주고, 에이전트 실행을 시작하고 이어 가고, 실행이 꼭 써야 하는 파일에서만 결과를 받아들이고, 재작업을 돌려보내고, 허용하면 통과한 것을 머지하고, 티켓을 최신 상태로 유지해요. 코드를 쓴 모델이 그 코드를 승인하는 모델이 되지는 않아요.</p>
+
+<h2>보드</h2>
+<p>보드는 티켓이 있는 곳이에요. README가 적은 종류는 이래요.</p>
+<ul>
+<li><code>local-md</code>(기본): <code>.tickets/</code> 폴더의 마크다운 파일이에요.</li>
+<li><code>github</code>: GitHub Issues예요. <code>nightshift:ready</code> 같은 <code>nightshift:*</code> 라벨을 써요. 이슈는 곧 프롬프트이기 때문에 <code>trustedAuthors</code>가 연 이슈만 가져가요.</li>
+<li><code>notion</code>: Notion 데이터베이스예요. 속성과 상태 이름을 설정할 수 있어요.</li>
+<li><code>command</code>: 어떤 트래커든 쓸 수 있어요. <code>list</code>, <code>set-status</code>, <code>note</code>를 구현한 작은 실행 파일만 있으면 Linear, Jira, 스프레드시트도 보드가 돼요.</li>
+</ul>
+
+<h2>티켓에서 머지된 풀 리퀘스트까지</h2>
+<p>빠른 시작은 명령 네 줄이에요.</p>
+<pre><code>npm install -g @catchmeif404/nightshift
+nightshift init --repo-path ~/code/my-app
+nightshift add "Add a slugify helper" --project my-app
+nightshift run</code></pre>
+<p>티켓은 이렇게 움직여요. 워커가 프로젝트의 ready 티켓을 가져가요. 프로젝트마다 워커는 하나이고 여러 프로젝트가 동시에 돌 수 있어요. 구현 단계는 새 worktree에서 돌고, 끝날 때 결과 파일에 <code>PR &lt;url&gt;</code>, <code>BRANCH &lt;name&gt;</code>, <code>BLOCKED &lt;why&gt;</code> 중 한 줄을 써야 해요. 검토 단계는 테스트를 돌리고 <code>PASS</code>, <code>REWORK</code>, <code>NEEDS_HUMAN</code>, <code>BLOCKED</code> 중 하나를 써요. <code>REWORK</code>이면 검토 메모를 들고 구현이 다시 돌고 검토자가 한 번 더 봐요. <code>maxRework</code> 기본값은 1이에요.</p>
+<p><code>PASS</code>면 티켓은 <code>review</code>로 가서 내가 머지하기를 기다려요. <code>autoMerge</code>를 켜면 nightshift가 직접 풀 리퀘스트를 머지하고 티켓은 <code>done</code>이 돼요. <code>autoMerge</code>는 기본이 꺼짐이에요. <code>publish: "pr"</code>이면 브랜치를 푸시하고 풀 리퀘스트를 열어요. <code>"branch"</code>이면 <code>nightshift/t-1</code> 같은 로컬 브랜치에서 기다려요.</p>
+
+<h2>사람이 정하는 관문</h2>
+<p>모델이 머지하면 안 되는 변경이 있어요. <code>humanGates</code> 기본값은 다섯 가지 전부예요. <code>money</code>, <code>legal</code>, <code>destructive-data</code>, <code>outward-facing</code>, <code>product-direction</code>이에요. 변경이 이 중 하나에 걸리면 검토자는 <code>NEEDS_HUMAN</code>으로 답하고 사람이 정해야 할 내용을 적어요. 티켓은 <code>blocked</code>가 돼요. 시작 가이드는 가격을 바꾸는 티켓을 예로 들어요. 별도로 <code>gatePaths</code>에 <code>db/migration/**</code> 같은 glob을 넣으면, 변경이 일치하는 파일을 건드릴 때 검토를 통과해도 <code>autoMerge</code>가 켜져 있어도 <code>NEEDS_HUMAN</code>이 돼요.</p>
+
+<h2>힘든 밤을 견디는 이유</h2>
+<ul>
+<li><strong>말이 아니라 파일이에요.</strong> 단계는 결과 파일을 정해진 형식으로 썼을 때만 끝난 것으로 쳐요. 읽을 수 없는 결과는 따로 치워 두고 그 단계를 다시 돌려요.</li>
+<li><strong>끊긴 실행은 이어져요.</strong> 단계마다 세션 id가 고정되어 있어서 재부팅 뒤에도 다음 실행이 같은 세션을 이어 가요. 3번 끊기면(<code>maxStageTries</code>) 마지막 로그 줄을 이유로 달아 티켓을 막아요.</li>
+<li><strong>사용량 한도는 기다려요.</strong> 에이전트가 초기화 시각이 있는 한도 메시지를 내면 시도로 세지 않고 초기화 뒤에 이어 가요.</li>
+<li><strong>내 체크아웃은 그대로예요.</strong> 티켓마다 자기 worktree와 브랜치에서 일해요.</li>
+</ul>
+<p>README에는 우리가 직접 쓰며 잰 수치가 하나 있어요. 앞선 bash 러너가 처음 12일 동안 티켓 225개를 구현과 검토에 통과시켰고, 그중 84%가 첫 검토에서 통과했다고 해요. 이 통과는 사람이 아니라 AI 검토자의 판정이고, README도 그렇게 밝히고 있어요.</p>
+<p>Node 20 이상, git, 로그인된 Claude Code CLI가 필요해요. 파일을 고치고 명령을 실행할 수 있는 에이전트를 돌리는 도구라서, README는 그래도 괜찮은 컴퓨터와 저장소에서 쓰고, 믿을 수 있을 때까지 <code>autoMerge</code>를 끄고, <code>trustedAuthors</code>를 짧게 유지하라고 권해요.</p>

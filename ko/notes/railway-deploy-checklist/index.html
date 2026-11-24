@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>실패에서 나온 Railway 배포 체크리스트 · catchmeif404</title>
+  <meta name="description" content="서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/railway-deploy-checklist/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/railway-deploy-checklist/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/railway-deploy-checklist/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/railway-deploy-checklist/">
+  <meta property="og:title" content="실패에서 나온 Railway 배포 체크리스트">
+  <meta property="og:description" content="서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/railway-deploy-checklist/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "실패에서 나온 Railway 배포 체크리스트", "description": "서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/railway-deploy-checklist/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/railway-deploy-checklist/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">Deploy</span></p>
+      <h1>실패에서 나온 Railway 배포 체크리스트</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>우리는 태그로 실행되는 GitHub Actions 워크플로에서 <code>railway up</code>을 실행해 백엔드를 Railway에 배포해요. 이 구성에서 시간을 잃은 일은 대부분 작은 불일치 다섯 가지에서 나왔고, 그중 둘은 두 번 이상 겪었어요. 새 서비스를 만들 때, 또는 배포는 되는데 502가 나거나 Postgres를 못 찾을 때 이 체크리스트를 써요.</p>
+
+<h2>1. 서비스 이름이 <code>--service</code>와 정확히 같아야 해요</h2>
+<p><strong>증상:</strong> 워크플로가 서비스를 찾지 못하거나, 의도하지 않은 곳에 배포돼요.</p>
+<p><strong>원인:</strong> Railway가 서비스 이름을 저장소나 폴더 이름으로 짓는다는 보장은 없어요. <code>aws-cost-calculator</code>의 백엔드 서비스 이름은 <code>backend</code>가 아니라 말 그대로 <code>aws-cost-calculator</code>예요.</p>
+<p><strong>해결:</strong> 대시보드에서 이름을 읽고, 그 문자열을 워크플로에 그대로 넣어요.</p>
+<pre><code>railway up --service aws-cost-calculator</code></pre>
+
+<h2>2. <code>railway up</code>은 저장소 루트에서 실행해요</h2>
+<p><strong>증상:</strong> "Root directory '/backend' was not found in the deployed source" 또는 "Railpack could not determine how to build the app" 오류로 빌드가 실패해요.</p>
+<p><strong>원인:</strong> 서비스는 두 가지 경로로 배포될 수 있어요. 워크플로로 올리는 경우와, 대시보드나 GitHub 연동으로 올리는 경우(수동 Deploy 클릭, 또는 아직 켜져 있는 Automatic Deploy)예요. 두 경로가 같은 모양의 소스를 올리지 않으면 Root Directory 설정은 둘 중 하나에만 맞을 수 있어요.</p>
+<ul>
+<li><code>backend/</code> 안에서 <code>railway up</code>을 실행하면 이미 그 폴더로 좁혀진 스냅샷이 올라가요. 이때 Root Directory를 <code>backend</code>로 두면 이중으로 좁혀져 실패해요.</li>
+<li>Root Directory를 비워 두고 대시보드 경로로 배포하면 Railpack이 저장소 루트를 훑고, 빌드할 진입점을 못 찾아 실패해요.</li>
+<li>저장소 루트에서 <code>railway up</code>을 실행하면 저장소 전체가 올라가서 대시보드 경로와 같아지고, Root Directory <code>backend</code>가 두 경로 모두에서 맞게 해석돼요.</li>
+</ul>
+<p><strong>해결:</strong> 배포 단계에 <code>working-directory: backend</code>도 <code>defaults.run.working-directory</code>도 두지 않고, Root Directory는 <code>backend</code>로 설정해요. 이 오류가 다시 나오면 Root Directory를 만지기 전에 워크플로가 다시 <code>backend/</code> 안에서 실행되도록 바뀌지 않았는지 먼저 봐요.</p>
+
+<h2>3. 네트워킹 포트가 앱이 실제로 쓰는 포트와 같아야 해요</h2>
+<p><strong>증상:</strong> 로그에는 앱이 떴다고 나오는데 모든 요청이 502 "Application failed to respond"를 돌려줘요.</p>
+<p><strong>원인:</strong> Railway는 자체 <code>PORT</code> 변수를 주입하는데 값이 <code>8080</code>인 경우가 많고, 앱은 Dockerfile의 <code>EXPOSE</code>와 상관없이 그 값에 바인딩해요. 생성된 도메인이 다른 포트를 가리키면 프록시가 앱에 닿지 못해요.</p>
+<p><strong>해결:</strong> 프레임워크가 시작할 때 남기는 로그 줄(Spring Boot라면 "Tomcat initialized with port ___")에서 포트를 확인하고, 도메인의 대상 포트를 그 값으로 맞춰요. 아니면 <code>PORT</code>를 변수로 직접 지정해 값을 고정해도 돼요.</p>
+
+<h2>4. Automatic Deploy를 끄고, 정말 꺼졌는지 확인해요</h2>
+<p><strong>증상:</strong> 상관없는 기능을 작업하는 동안 무작위 실패가 나고 인스턴스가 낡아 보여요. 배포 방식 자체가 불안정해 보여요.</p>
+<p><strong>원인:</strong> Automatic Deploy(Settings, Source)를 껐다고 믿었지만 꺼져 있지 않았어요. <code>main</code>에 푸시할 때마다 Railway의 GitHub 연동이 두 번째 배포를 시작했고, 태그로 실행되는 <code>railway up</code> 워크플로와 경쟁했어요. <code>aws-cost-calculator</code>에서 디버깅에 긴 시간을 썼어요.</p>
+<p><strong>해결과 확인:</strong> 끈 뒤에, 마지막 배포를 무엇이 시작했는지 Railway에 물어봐요.</p>
+<pre><code>railway status --json</code></pre>
+<p>서비스의 <code>latestDeployment.meta</code>를 봐요. <code>reason</code>이 <code>"deploy"</code>이고 <code>repo</code>와 <code>commitHash</code>가 태그가 아니라 최근 브랜치 푸시와 일치하면 Automatic Deploy가 아직 동작하는 거예요.</p>
+
+<h2>5. 새 변수는 대시보드에서 배포하기 전까지 적용되지 않을 수 있어요</h2>
+<p><strong>증상:</strong> 변수를 추가하고 워크플로를 여러 번 다시 돌려도 앱에서는 빈 값으로 보여요.</p>
+<p><strong>원인:</strong> <code>ADMIN_METRICS_API_KEY</code>를 추가하고 태그로 실행되는 <code>railway up</code> 워크플로를 계속 다시 돌렸어요. 값의 길이만 찍는 임시 디버그 로그로 보니 Railway에는 실제 값이 들어 있는데 앱은 <code>""</code>를 보고 있었어요. Railway 대시보드에서 직접 Deploy를 한 번 누르자 비로소 적용됐고, 그 뒤로는 CLI로 시작한 재배포도 모두 정상이었어요.</p>
+<p><strong>해결:</strong> 변수를 추가하거나 바꾼 뒤에는 대시보드에서 Deploy를 한 번 눌러요. 그다음부터는 CLI 재배포를 믿어도 돼요. 이런 변수를 디버깅할 때는 값이 아니라 길이만 로그로 남겨요.</p>
+
+<h2>확인 순서</h2>
+<p>배포는 됐는데 응답이 없으면 서비스 이름, 소스 모양과 Root Directory, 포트, 두 번째 배포가 도는지, 마지막으로 변수 순서로 봐요. 앞의 네 가지는 대시보드나 <code>railway status --json</code>으로 읽을 수 있는 설정이라 빨리 배제할 수 있어요. 이 체크의 바탕이 되는 태그 기반 구성은 <a href="/ko/notes/deploy-on-tags-not-on-main/">main이 아니라 태그로 배포해요</a>에 적었어요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/p2p-fighting-game-latency/"><span class="tag">Maskman</span><span class="card-title">브라우저 격투 게임을 서버 중계에서 P2P로 옮긴 이유</span><span class="card-desc">한국에서 서버 중계 입력이 0.33~1.4초 걸려, 마스크맨은 대전 입력을 WebRTC로 직접 보내고 방 서버는 연결만 맡아요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/nightshift-builder-and-reviewer/"><span class="tag">nightshift</span><span class="card-title">nightshift: 한 모델이 만들고 다른 모델이 검토해요</span><span class="card-desc">nightshift는 보드의 티켓마다 한 모델이 브랜치에서 구현하고 다른 모델이 검토하는 오픈소스 러너예요. 사람이 정할 일은 사람에게 남겨요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/mobile-app-version-gate/"><span class="tag">figdex</span><span class="card-title">옛 앱 빌드를 위한 버전 게이트</span><span class="card-desc">figdex 백엔드는 최소 버전과 최신 버전을 내려줘서 옛 앱에 업데이트를 요청해요. 최신 버전은 스토어에 빌드가 열린 뒤에만 올려요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>마니또 추첨은 이렇게 돌아가요 · catchmeif404</title>
+  <meta name="description" content="산타픽 추첨은 자기 자신을 뽑지 않고, 서로 뽑히면 안 되는 쌍을 지키며, 불가능한 방은 정확히 알려 줘요. 알고리즘과 테스트를 설명해요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <meta property="og:title" content="마니또 추첨은 이렇게 돌아가요">
+  <meta property="og:description" content="산타픽 추첨은 자기 자신을 뽑지 않고, 서로 뽑히면 안 되는 쌍을 지키며, 불가능한 방은 정확히 알려 줘요. 알고리즘과 테스트를 설명해요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/secret-santa-draw-algorithm/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "마니또 추첨은 이렇게 돌아가요", "description": "산타픽 추첨은 자기 자신을 뽑지 않고, 서로 뽑히면 안 되는 쌍을 지키며, 불가능한 방은 정확히 알려 줘요. 알고리즘과 테스트를 설명해요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/secret-santa-draw-algorithm/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/secret-santa-draw-algorithm/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">SantaPick</span></p>
+      <h1>마니또 추첨은 이렇게 돌아가요</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>마니또 추첨은 이름을 섞기만 하면 될 것 같지만 조건이 금방 쌓여요. 모두가 정확히 한 명에게 주고 정확히 한 명에게 받아야 해요. 자기 자신은 뽑히면 안 돼요. 방장은 서로 뽑히면 안 되는 쌍, 예를 들어 연인이나 이미 서로 취향을 잘 아는 사이를 정할 수 있어요. 그리고 조건을 만족할 수 없다면, 끝나지 않는 요청을 기다리게 하지 말고 바로 알려 줘야 해요. 이 모든 걸 <code>src/lib/draw.ts</code>의 순수 함수 <code>drawPairs</code> 하나가 맡아요.</p>
+
+<h2>입력과 규칙</h2>
+<p>함수는 참가자 id 목록, 제외할 쌍 목록, 선택 사항인 난수 생성기를 받아요. 운영에서는 <code>crypto.getRandomValues</code> 기반 생성기를 넘기고, 테스트에서는 기본값을 써요. 결과는 <code>giver, receiver</code> 쌍의 목록이거나 <code>{ ok: false }</code>예요.</p>
+<p>제외는 양방향이에요. 방장이 "A와 B는 만나면 안 돼요"라고 하면 A가 B에게 주는 것도, B가 A에게 주는 것도 막아요. 두 id를 정렬해서 만든 키로 쌍을 저장하니까 어느 방향으로 찾아도 같은 결과가 나와요.</p>
+<pre><code>function key(a: string, b: string): string {
+  return a &lt; b ? `${a}|${b}` : `${b}|${a}`;
+}
+const allowed = (g: string, r: string) =&gt; g !== r &amp;&amp; !banned.has(key(g, r));</code></pre>
+<p>추첨하려면 방에 최소 세 명이 있어야 하고(방 인원은 3명에서 50명), 함수 자체는 두 명 미만이면 실패를 돌려줘요.</p>
+
+<h2>먼저 시도하는 건 큰 원 하나예요</h2>
+<p>첫 전략은 모두를 한 줄로 섞은 뒤 각자 다음 사람에게 주고 마지막 사람이 첫 사람에게 주게 하는 거예요. A는 B에게, B는 C에게, 그렇게 돌아서 다시 A로 오는 원 하나가 돼요. 이웃한 쌍이 모두 허용되면 유효한 추첨이고, 맞히기 게임에는 좋은 성질이 있어요. 작은 원이 여러 개 생기면, 나와 내 상대가 서로 주고받았다거나 세 명짜리 고리가 닫혔다는 걸 알아챈 사람이 필요 이상으로 많은 걸 알게 돼요. 긴 원 하나면 그런 지름길이 없어요.</p>
+<p>이 시도를 최대 400번 해요. 무작위 원은 이웃한 쌍 중 하나라도 금지일 때만 실패하니까, 제외가 적거나 없는 방은 대개 일찍 성공해요.</p>
+
+<h2>불가능한 방 찾아내기</h2>
+<p>400번 모두 실패하면 조건이 빡빡하거나 불가능한 거예요. 값싼 불가능 검사를 먼저 해요. 누군가 줄 수 있는 사람이 하나도 없거나, 그 사람에게 줄 수 있는 사람이 하나도 없으면 어떤 추첨도 존재하지 않아요.</p>
+<pre><code>for (const id of ids) {
+  if (!ids.some((o) =&gt; allowed(id, o)) || !ids.some((o) =&gt; allowed(o, id))) return { ok: false };
+}</code></pre>
+<p>테스트에 있는 가장 단순한 예는 세 명 중 한 명이 나머지 둘과 모두 제외된 경우예요. 열네 명 방에서 한 사람이 모두와 제외된 테스트는 답이 200밀리초 안에 나오는지도 함께 확인해요.</p>
+<p>이 검사로 모든 불가능 입력을 잡지는 못해요. 각자는 선택지가 있어도 여러 사람이 얽혀서 충돌할 수 있으니까요. 나머지는 원 하나로 한정하지 않고 어떤 유효한 배정이든 찾는 백트래킹으로 넘겨요. 선택지가 적은 사람부터 먼저 배치하고, 받는 사람은 무작위 순서로 시도해요. 탐색한 노드 수를 세다가 20,000개를 넘으면 포기해서, 어려운 입력이나 불가능한 입력이 요청을 붙잡고 있지 못하게 해요.</p>
+<p>이 한도는 의도한 절충이에요. 한도에서 멈추면 불가능하다고 보고하는데, 아주 빡빡한 일부 조건에서는 우리가 닿지 못한 해가 있을 수도 있어요. 어느 쪽이든 방장은 추첨 불가 오류를 받고, 다음 행동은 제외 조건을 바꾸는 걸로 같아요.</p>
+
+<h2>결과를 안전하게 저장하기</h2>
+<p>추첨 함수는 쌍만 계산해요. 저장은 별도 단계이고, 동시에 일어나는 변화에 속지 않아야 해요. <code>runDraw</code>는 한 번의 batch로 모두 써요. 첫 문장은 방이 아직 열려 있고 우리가 뽑은 인원수와 정확히 같을 때만 방을 닫고, 배정 insert는 바로 앞 문장이 행을 바꿨을 때(SQLite의 <code>changes()</code>)만 실행돼요. 참가자를 읽은 뒤 쌍을 쓰기 전에 누가 들어오면 방 닫기가 아무것도 바꾸지 않고, 그러면 나머지도 하나도 쓰이지 않아요. 방장에게는 "방이 닫혔어요" 응답이 가고 다시 시도할 수 있어요.</p>
+
+<h2>테스트는 이렇게 해요</h2>
+<p><code>draw.test.ts</code>는 결과가 무작위라서 함수를 여러 번 돌려요.</p>
+<ul>
+<li>여덟 명으로 200번 돌려 모두가 주는 사람으로 한 번, 받는 사람으로 한 번 나오고 자기 자신을 뽑지 않는지 확인해요.</li>
+<li>제외 세 쌍을 두고 200번 돌려 그 쌍이 어느 방향으로도 나오지 않는지 확인해요.</li>
+<li>최소 인원인 세 명도 돼요.</li>
+<li>한 명뿐인 경우를 포함해 불가능한 조건은 <code>ok: false</code>를 돌려줘요.</li>
+<li>모두와 제외된 사람이 있으면 빠르게 실패해요.</li>
+<li>빡빡한 경우로, 여덟 명이 원형으로 앉아 이웃끼리만 만날 수 있으면 유효한 추첨은 원을 도는 두 방향뿐이에요. 무작위로 섞어서는 거의 못 찾으니 백트래킹이 풀어야 해요. 테스트는 이걸 20번 연속으로 푸는지 확인해요.</li>
+</ul>
+<p>마지막 테스트가 우리에게 가장 중요해요. 규칙이 없는 방에서만 잘 돌고, 규칙이 필요한 방에서 조용히 실패하는 추첨은 만들기 쉬우니까요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">Durable Object로 만든 실시간 마을</span><span class="card-desc">마을 코드당 Durable Object 하나, 최소한의 저장, enum 인사, 서버가 돌리는 눈싸움까지 산타픽 실시간 마을의 구조예요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/rate-limits-without-storing-ips/"><span class="tag">SantaPick</span><span class="card-title">IP를 저장하지 않는 요청 제한</span><span class="card-desc">로그인 없는 사이트에서 산타픽이 스팸을 막는 방법이에요. 해시한 시간대별 카운터, 한 문장 upsert, 기기 키, 제한 없는 방문 카운터를 다뤄요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">실패에서 나온 Railway 배포 체크리스트</span><span class="card-desc">서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

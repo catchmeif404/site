@@ -36,6 +36,18 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
   `.frame--screen`). The detail overlay copies the rack's frame (`#detail-frame` in home.js).
 - `figdex/index.html` (`/figdex/`) and `figdex/privacy.html` (`/figdex/privacy`) are standalone, inline-styled, bilingual pages for Google OAuth verification (TK-240). `figdex/privacy.html` is a verbatim copy of figdex `backend/src/main/resources/static/privacy.html` (version 2, effective 2026-11-06; source commit in an HTML comment). Do not edit the policy text here: change it in figdex first, then re-copy.
 
+## Notes, About, Privacy (added 2026-11-24, owner's call after AdSense rejected the one-page showroom as low-value content)
+
+- Sources are HTML fragments in `content/`: `content/notes/<slug>.<en|ko>.html` (line 1 is an HTML comment with JSON
+  `title`, `description`, `date`, `product`) and `content/pages/<about|privacy>.<en|ko>.html`. Every note needs both languages.
+- `python3 tools/build_notes.py` (standard library only) writes the static pages that are served: `/notes/`, `/notes/<slug>/`,
+  `/about/`, `/privacy/` in English and the same under `/ko/`, plus `sitemap.xml` and `robots.txt`. Re-run it after any
+  change in `content/` and commit the output; do not edit the generated pages by hand. Styles: `notes.css`.
+- These pages use one URL per language (hreflang links, a link to the other language), not the homepage's in-page switch.
+- Notes are engineering write-ups taken from our own code and deploy records. Keep them true to the source repo: no invented
+  numbers, no other games' names, nothing internal (tickets, team tools, account ids, local paths).
+- `content/pages/privacy.*` is policy text: changing it needs the owner's approval.
+
 ## Development and verification
 
 ```bash

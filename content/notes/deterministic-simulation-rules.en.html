@@ -1,0 +1,38 @@
+<!-- {"title": "Keeping a fighting game simulation deterministic across browsers", "description": "Two Maskman players only exchange button bits, so both browsers must compute the same fight; these are the rules, the hash check and the tests that enforce it.", "date": "2026-11-24", "product": "Maskman"} -->
+<p>In Maskman's online mode the two browsers never send positions or health. They send only which buttons were held on each frame. Each side feeds those inputs into its own copy of the game, and the fights agree only if both copies compute exactly the same numbers. Everything in this note follows from that.</p>
+
+<h2>The shape of the simulation</h2>
+<p>All game rules live in <code>src/sim/</code>, which has no DOM access. Its entry point is one function:</p>
+<pre><code>step(world, [p1Bits, p2Bits])</code></pre>
+<p>One call advances the world by one frame at a fixed 60 per second. The inputs are plain integers, one per player, built from a button enum whose values are powers of two:</p>
+<pre><code>export enum Btn {
+  Left = 1, Right = 2, Up = 4, Down = 8,
+  Attack = 16, Grab = 32,
+  SkillA = 64, SkillB = 128,
+  Mask = 256, Super = 512,
+}</code></pre>
+<p>A frame of input from one player is therefore one number below 1,024, which is small enough to batch many frames into a single message. The renderer, sound and menus only read the world and never change it. The real-time loop runs the simulation in steps of 1000/60 ms, so rendering speed does not change how the fight plays out.</p>
+
+<h2>The rules the code follows</h2>
+<p>The agent guide for the repo states the rule directly: the simulation must stay deterministic across browsers. No <code>Math.random</code>, no <code>Math.sin</code>, <code>Math.cos</code>, <code>Math.hypot</code> or other engine-dependent math in <code>src/sim/</code>, and no wall-clock time. In practice that means:</p>
+<ul>
+<li>Randomness comes from a seeded generator whose state lives in the data. The CPU player keeps a small linear congruential generator in a field and advances it with <code>Math.imul</code> and an unsigned shift. The roguelike run keeps its own seeded generator inside the run object.</li>
+<li>Time is a frame counter. Cooldowns, hit stop and round timers count frames.</li>
+<li>Functions the language specifies exactly are fine: <code>Math.abs</code>, <code>Math.min</code>, <code>Math.max</code>, <code>Math.floor</code>, <code>Math.imul</code>. Trigonometric and transcendental functions are not, because the standard lets engines differ in the last digits, and a one-bit difference in a position will grow into a different fight.</li>
+<li>Rules read the stored state of a fighter, including a short history of the last directions pressed, instead of asking the keyboard. Command moves such as the 2 3 6 motion (down, down-forward, forward) are read from that history, so they are part of the state both sides compute.</li>
+</ul>
+<p>One thing we found while writing this: the lava stage's hazard placement uses a sine-based helper, <code>hash01</code>, which is the kind of function the rule forbids. We have not seen a desync from it. It deserves a replacement with integer arithmetic, and the rule is only as good as the code that follows it.</p>
+
+<h2>Catching a mismatch while playing</h2>
+<p>Rules do not prove anything, so the game checks. Every 120 frames, which is every two seconds, each side computes a hash of its world and sends it to the other. The hash mixes the frame number, then for each fighter the position, health, state and guard health, plus the number of projectiles and the round timer:</p>
+<pre><code>h = Math.imul(h ^ Math.round(v * 16), 2654435761) &gt;&gt;&gt; 0;</code></pre>
+<p>Values are rounded to 1/16 before mixing. When a hash from the rival arrives and does not equal ours for that frame, the link sets a <code>desync</code> flag and logs the frame number. That flag shows what happened, but nothing resynchronizes the match. The hash covers a subset of the state, so it can miss a divergence in something it does not include until that divergence reaches the fields it does.</p>
+
+<h2>How the tests check it</h2>
+<p>The simplest test is also the most important. It creates a world, gives two CPU players fixed seeds, runs 2,400 frames (40 seconds of game time), and serializes fighters, match and projectiles to JSON. It does this twice and expects identical strings:</p>
+<pre><code>expect(play()).toBe(play());</code></pre>
+<p>That catches anything that reads randomness, time or leftover module state. It cannot catch a difference between two different browsers, because both runs happen in the same engine. For that, there is an integration test that is skipped unless you point it at a running dev server: two headless clients play a full match through the real room server and the test checks they agree.</p>
+<p>A smaller set of tests pins the formats that must stay stable. Saved enums such as masks, skills and perks are stored as numbers, so new members may only be added at the end, and a test fails if the existing ones move.</p>
+
+<h2>What still breaks it</h2>
+<p>The usual failure is a new feature that quietly reads something outside the world: a random choice for a visual effect that ends up changing damage, or a lookup that depends on object iteration order. Our defense is the short rule list, the replay test and the periodic hash, which is thinner than a full state comparison.</p>

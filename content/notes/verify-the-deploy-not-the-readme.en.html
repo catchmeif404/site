@@ -1,0 +1,29 @@
+<!-- {"title": "Verify the deploy, not the README", "description": "Our documentation said pushes deployed the site, but the Cloudflare Pages connection did not exist. Here is what we do now to confirm that a deploy happened.", "date": "2026-11-24", "product": "Deploy"} -->
+<p>The deployment notes for the catchmeif404.com site said that it redeploys through Cloudflare Pages' git integration whenever <code>main</code> changes. That sentence was written as a fact. It was not one. The GitHub-to-Cloudflare-Pages connection did not exist until 2026-09-07.</p>
+
+<h2>What was actually happening</h2>
+<p>The site is plain static HTML, CSS and JavaScript, with no build step. Before the connection existed, every deploy had been done by hand with the <code>wrangler</code> CLI. Because the README described the git integration as already working, pushing to <code>main</code> felt like deploying. It did nothing. The commit landed on GitHub, the live site stayed as it was, and nothing failed or complained, since nothing was listening for the push.</p>
+<p>That is what makes this class of problem expensive. A deploy that fails loudly gets fixed the same day. A deploy that silently does not happen leaves you looking at old behavior and doubting the code you just wrote, while the real cause is a missing link between two services.</p>
+
+<h2>What the documentation could not tell us</h2>
+<p>The text said the integration existed, and the repository gave no way to contradict it. A README can describe what a system is supposed to do. It cannot show what the provider's side is configured to do, because that configuration lives in a dashboard the repository never sees. Reading the document again would not have found the gap. Only an action with an observable result could: push a change and look at the live site.</p>
+<p>The lesson we took is narrower than "write better docs". Documentation of a deployment is a claim, and a claim about another system needs to be checked against that system. So we check a connection like this by pushing something and watching it appear, instead of trusting a README's claim that it works. The same applies to a note we wrote ourselves a month ago.</p>
+
+<h2>The habit we took from it</h2>
+<p>We stopped treating a document, a toggle or a green build as proof of a deploy. The rule now has three parts:</p>
+<ol>
+<li><strong>Verify a new connection by using it.</strong> Push something small and check that it shows up on the live URL. Do this the first time a git integration is set up, and again whenever someone says it already works.</li>
+<li><strong>A successful build is not a deployment.</strong> A build only shows that code compiled. After a deploy we check the live URL or the provider's deployment record, and write down the actual result in the project's status document. We do not infer a deployment from a green build.</li>
+<li><strong>Ask the provider what started the deploy.</strong> The same mistake appeared on the Railway side. We believed Automatic Deploy was off, but every push to <code>main</code> still started a competing deploy. We only saw it by reading <code>latestDeployment.meta</code> from <code>railway status --json</code> and noticing that the reason was a branch push, not a tag.</li>
+</ol>
+
+<h2>What a verification looks like</h2>
+<p>The check should be cheap enough that nobody skips it, and it should end in something you can see.</p>
+<p>For a static site, it can be as small as checking that a change is visible at the public address:</p>
+<pre><code># after pushing a visible change
+curl -s https://catchmeif404.com/ | grep "the text you just changed"</code></pre>
+<p>For a Railway service it means reading the deployment record and then calling the service. The record tells you which commit or tag started the deploy, and a request to a real endpoint tells you whether the new version is the one answering. Neither of them replaces the other: the record can say deployed while the proxy still points at the wrong port, and a working endpoint can be an older instance.</p>
+
+<h2>Where this fits with tag-triggered deploys</h2>
+<p>Our production deploys are driven by <code>vX.Y.Z</code> tags, as described in <a href="/notes/deploy-on-tags-not-on-main/">Deploy on tags, not on main</a>. A tag-based setup has more moving parts than a plain push: a workflow trigger, a provider token, a service name, and sometimes a variable that must be applied. Each of those can be misconfigured without any error on the commit. The <a href="/notes/railway-deploy-checklist/">Railway checklist</a> lists the ones that have hurt us.</p>
+<p>The site itself still deploys from pushes to <code>main</code> through the Cloudflare Pages connection, and moving it to a tag-driven deploy remains a separate job. In the meantime the connection works because we pushed a change and watched it appear, not because a document says so.</p>

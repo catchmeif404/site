@@ -1,0 +1,38 @@
+<!-- {"title": "A Railway deploy checklist from real failures", "description": "Five Railway mistakes that cost us debugging time, each with the symptom you will see and the fix that worked, from service names to unapplied variables.", "date": "2026-11-24", "product": "Deploy"} -->
+<p>We deploy backends to Railway with a tag-triggered GitHub Actions workflow that runs <code>railway up</code>. Most of the time lost on that setup came from five small mismatches, two of which bit us more than once. This is the checklist we use for a new service, or for one that deploys but returns 502 or cannot find its Postgres.</p>
+
+<h2>1. The service name must match <code>--service</code> exactly</h2>
+<p><strong>Symptom:</strong> the workflow cannot find the service, or deploys to something other than what you expected.</p>
+<p><strong>Cause:</strong> Railway does not necessarily name a service after the repository or folder. The backend service of <code>aws-cost-calculator</code> is literally named <code>aws-cost-calculator</code>, not <code>backend</code>.</p>
+<p><strong>Fix:</strong> read the name in the dashboard and put that exact string in the workflow.</p>
+<pre><code>railway up --service aws-cost-calculator</code></pre>
+
+<h2>2. Run <code>railway up</code> from the repo root</h2>
+<p><strong>Symptom:</strong> the build fails with "Root directory '/backend' was not found in the deployed source", or with "Railpack could not determine how to build the app".</p>
+<p><strong>Cause:</strong> a service can be deployed two ways, by the workflow and by the dashboard or GitHub integration (a manual Deploy click, or Automatic Deploy if it is still on). They must upload the same shape of source, or the Root Directory setting can be right for only one of them:</p>
+<ul>
+<li><code>railway up</code> run from inside <code>backend/</code> uploads a snapshot already scoped to that folder. Root Directory <code>backend</code> then scopes twice and fails.</li>
+<li>Root Directory left empty with the dashboard path makes Railpack scan the repo root, find no buildable entry point, and fail.</li>
+<li><code>railway up</code> run from the repo root uploads the whole repository, the same as the dashboard path, so Root Directory <code>backend</code> resolves correctly for both.</li>
+</ul>
+<p><strong>Fix:</strong> no <code>working-directory: backend</code> and no <code>defaults.run.working-directory</code> on the deploy step, and Root Directory set to <code>backend</code>. If this error comes back, check whether the workflow has drifted to running from inside <code>backend/</code> before touching the Root Directory setting.</p>
+
+<h2>3. The networking port must match what the app binds to</h2>
+<p><strong>Symptom:</strong> every request returns 502 "Application failed to respond", although the logs show the app booted.</p>
+<p><strong>Cause:</strong> Railway injects its own <code>PORT</code> variable, often <code>8080</code>, and the app binds to that, whatever the Dockerfile's <code>EXPOSE</code> says. If the generated domain points at a different port, the proxy cannot reach the app.</p>
+<p><strong>Fix:</strong> find the line the framework logs at startup (for Spring Boot, "Tomcat initialized with port ___") and set the domain's target port to that number. Alternatively set <code>PORT</code> explicitly as a variable to force the value.</p>
+
+<h2>4. Turn off Automatic Deploy, then verify that it is off</h2>
+<p><strong>Symptom:</strong> random failures and stale-looking instances while you iterate on something unrelated. The deploy mechanism looks flaky.</p>
+<p><strong>Cause:</strong> we believed Automatic Deploy (Settings, Source) was off. It was not. Every push to <code>main</code> started a second deploy through Railway's GitHub integration, racing the tag-triggered <code>railway up</code> workflow. It cost a long debugging session on <code>aws-cost-calculator</code>.</p>
+<p><strong>Fix and check:</strong> turn it off, then ask Railway what actually started the last deployment:</p>
+<pre><code>railway status --json</code></pre>
+<p>Look at a service's <code>latestDeployment.meta</code>. If <code>reason</code> is <code>"deploy"</code> and it carries a <code>repo</code> and <code>commitHash</code> matching a recent branch push rather than a tag, Automatic Deploy is still firing.</p>
+
+<h2>5. A new variable can stay unapplied until a dashboard deploy</h2>
+<p><strong>Symptom:</strong> you add a variable, re-run the workflow several times, and the app still sees an empty value.</p>
+<p><strong>Cause:</strong> we added <code>ADMIN_METRICS_API_KEY</code> and re-ran the tag-triggered <code>railway up</code> workflow repeatedly. A temporary debug log that printed only the value's length confirmed the variable was set to a real value in Railway while the app saw <code>""</code>. Only an explicit manual Deploy click in the Railway dashboard applied it. Every CLI-triggered redeploy after that worked.</p>
+<p><strong>Fix:</strong> after adding or changing a variable, click Deploy in the dashboard once. After that it is safe to rely on CLI redeploys again. When you debug a variable like this, log its length, never its value.</p>
+
+<h2>Order of checks</h2>
+<p>When a service deploys but does not answer, we go in this order: the service name, the source shape and Root Directory, the port, then whether a second deploy is running, and last the variables. The first four are configuration that can be read in the dashboard or from <code>railway status --json</code>, so they are quick to rule out. For the tag-triggered setup these checks sit behind, see <a href="/notes/deploy-on-tags-not-on-main/">Deploy on tags, not on main</a>.</p>

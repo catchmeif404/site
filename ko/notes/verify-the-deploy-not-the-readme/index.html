@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>README가 아니라 배포를 확인해요 · catchmeif404</title>
+  <meta name="description" content="문서에는 푸시하면 사이트가 배포된다고 적혀 있었지만 Cloudflare Pages 연결은 없었어요. 그 뒤로 배포를 확인하는 방식이 바뀐 이야기예요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/verify-the-deploy-not-the-readme/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/verify-the-deploy-not-the-readme/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/verify-the-deploy-not-the-readme/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/verify-the-deploy-not-the-readme/">
+  <meta property="og:title" content="README가 아니라 배포를 확인해요">
+  <meta property="og:description" content="문서에는 푸시하면 사이트가 배포된다고 적혀 있었지만 Cloudflare Pages 연결은 없었어요. 그 뒤로 배포를 확인하는 방식이 바뀐 이야기예요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/verify-the-deploy-not-the-readme/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "README가 아니라 배포를 확인해요", "description": "문서에는 푸시하면 사이트가 배포된다고 적혀 있었지만 Cloudflare Pages 연결은 없었어요. 그 뒤로 배포를 확인하는 방식이 바뀐 이야기예요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/verify-the-deploy-not-the-readme/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/verify-the-deploy-not-the-readme/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">Deploy</span></p>
+      <h1>README가 아니라 배포를 확인해요</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>catchmeif404.com 사이트의 배포 문서에는 <code>main</code>이 바뀌면 Cloudflare Pages의 git 연동으로 다시 배포된다고 적혀 있었어요. 사실처럼 쓰인 문장이었지만 사실이 아니었어요. GitHub와 Cloudflare Pages의 연결은 2026-09-07에야 생겼어요.</p>
+
+<h2>실제로 일어난 일</h2>
+<p>이 사이트는 빌드 단계가 없는 순수 HTML, CSS, JavaScript예요. 연결이 생기기 전의 배포는 전부 <code>wrangler</code> CLI로 직접 올린 거였어요. README에 git 연동이 이미 동작한다고 적혀 있으니 <code>main</code>에 푸시하면 배포된 것처럼 느껴졌지만, 실제로는 아무 일도 일어나지 않았어요. 커밋은 GitHub에 올라갔고 운영 사이트는 그대로였어요. 푸시를 기다리는 쪽이 없었으니 실패도 경고도 나오지 않았어요.</p>
+<p>이런 문제가 비싼 이유가 여기에 있어요. 큰 소리로 실패하는 배포는 그날 고쳐져요. 조용히 일어나지 않는 배포는 방금 쓴 코드를 의심하게 만들어요. 진짜 원인은 두 서비스 사이의 빠진 연결인데도요.</p>
+
+<h2>문서가 알려 주지 못한 것</h2>
+<p>문서에는 연동이 있다고 적혀 있었고, 저장소 안에는 그것을 반박할 근거가 없었어요. README는 시스템이 무엇을 하게 되어 있는지는 설명할 수 있어도, 호스팅 서비스 쪽이 실제로 어떻게 설정되어 있는지는 보여 줄 수 없어요. 그 설정은 저장소가 볼 수 없는 대시보드에 있기 때문이에요. 문서를 다시 읽는다고 빈틈이 보이지는 않았을 거예요. 결과를 눈으로 볼 수 있는 행동, 즉 변경을 푸시하고 실제 사이트를 보는 일만이 빈틈을 드러낼 수 있었어요.</p>
+<p>여기서 얻은 교훈은 문서를 더 잘 쓰자는 것보다 좁아요. 배포에 대한 문서는 하나의 주장이고, 다른 시스템에 대한 주장은 그 시스템에 대조해서 확인해야 해요. 그래서 이런 연결은 README의 설명을 믿는 대신 무언가를 푸시하고 그것이 나타나는지 지켜보는 방식으로 확인해요. 한 달 전에 우리가 직접 쓴 메모도 마찬가지예요.</p>
+
+<h2>여기서 얻은 습관</h2>
+<p>문서, 토글, 초록색 빌드를 배포의 증거로 치지 않기로 했어요. 지금은 규칙이 세 가지예요.</p>
+<ol>
+<li><strong>새 연결은 직접 써 보고 확인해요.</strong> 작은 변경을 푸시하고 실제 주소에 나타나는지 봐요. git 연동을 처음 설정할 때, 그리고 누군가 이미 된다고 말할 때마다 해요.</li>
+<li><strong>빌드 성공은 배포가 아니에요.</strong> 빌드는 코드가 컴파일됐다는 것만 보여 줘요. 배포 뒤에는 실제 주소나 호스팅 서비스의 배포 기록을 확인하고, 실제 결과를 프로젝트 상태 문서에 적어요. 초록색 빌드만 보고 배포됐다고 추정하지 않아요.</li>
+<li><strong>배포를 무엇이 시작했는지 호스팅 서비스에 물어봐요.</strong> 같은 실수가 Railway 쪽에서도 나왔어요. 우리는 Automatic Deploy가 꺼졌다고 믿었지만 <code>main</code>에 푸시할 때마다 경쟁하는 배포가 시작되고 있었어요. <code>railway status --json</code>의 <code>latestDeployment.meta</code>를 읽고 이유가 태그가 아니라 브랜치 푸시인 것을 본 뒤에야 알았어요.</li>
+</ol>
+
+<h2>확인은 어떻게 하나요</h2>
+<p>확인은 아무도 건너뛰지 않을 만큼 가벼워야 하고, 눈으로 볼 수 있는 결과로 끝나야 해요.</p>
+<p>정적 사이트라면 변경이 공개 주소에서 보이는지 확인하는 정도로 충분해요.</p>
+<pre><code># 눈에 보이는 변경을 푸시한 뒤
+curl -s https://catchmeif404.com/ | grep "방금 바꾼 문구"</code></pre>
+<p>Railway 서비스라면 배포 기록을 읽고, 그다음 서비스를 직접 호출해요. 기록은 어떤 커밋이나 태그가 배포를 시작했는지 알려 주고, 실제 엔드포인트 호출은 새 버전이 응답하는지 알려 줘요. 둘은 서로를 대신하지 못해요. 기록에는 배포됐다고 나와도 프록시가 엉뚱한 포트를 가리킬 수 있고, 엔드포인트가 잘 응답해도 예전 인스턴스일 수 있어요.</p>
+
+<h2>태그 배포와의 관계</h2>
+<p>이 습관은 배포 방식이 바뀌어도 그대로 쓸 수 있어요.</p>
+<p>운영 배포는 <a href="/ko/notes/deploy-on-tags-not-on-main/">main이 아니라 태그로 배포해요</a>에서 설명한 대로 <code>vX.Y.Z</code> 태그로 움직여요. 태그 기반 구성은 단순한 푸시보다 움직이는 부분이 많아요. 워크플로 트리거, 호스팅 서비스 토큰, 서비스 이름, 때로는 적용해야 하는 변수가 있어요. 이 중 어느 하나가 잘못 설정되어도 커밋에는 아무 오류가 나타나지 않아요. 우리를 아프게 했던 항목들은 <a href="/ko/notes/railway-deploy-checklist/">Railway 배포 체크리스트</a>에 정리했어요.</p>
+<p>사이트 자체는 지금도 Cloudflare Pages 연결로 <code>main</code> 푸시에서 배포되고, 태그 배포로 옮기는 일은 따로 남아 있어요. 그동안 이 연결이 믿을 만한 이유는 문서에 그렇게 적혀 있어서가 아니라, 변경을 푸시하고 그것이 나타나는 것을 직접 봤기 때문이에요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/tuning-bosses-with-a-bot/"><span class="tag">Maskman</span><span class="card-title">CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기</span><span class="card-desc">CPU가 마스크맨 로그라이크를 36판 돌려 첫 보스가 벽이라는 걸 보여 줬고 v1.24.1에서 조정했어요. 봇 밸런싱이 알려 주는 것과 못 알려 주는 것을 정리했어요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/secret-santa-without-login/"><span class="tag">SantaPick</span><span class="card-title">로그인 없이 마니또 돌리기</span><span class="card-desc">산타픽이 가입 없이 마니또를 돌리는 방법: 참가 코드와 개인 링크, 해시로만 저장하는 토큰, 공개 전에는 산타를 보내지 않는 규칙이에요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/secret-santa-draw-algorithm/"><span class="tag">SantaPick</span><span class="card-title">마니또 추첨은 이렇게 돌아가요</span><span class="card-desc">산타픽 추첨은 자기 자신을 뽑지 않고, 서로 뽑히면 안 되는 쌍을 지키며, 불가능한 방은 정확히 알려 줘요. 알고리즘과 테스트를 설명해요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

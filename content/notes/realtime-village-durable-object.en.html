@@ -1,0 +1,34 @@
+<!-- {"title": "A real-time village on Durable Objects", "description": "How SantaPick's village runs on Cloudflare: one Durable Object per village code, little stored state, enum greetings and a server-run snowball arena.", "date": "2026-11-24", "product": "SantaPick"} -->
+<p>SantaPick's village is a shared 3D space where friends walk around, wave at each other, sit by a campfire and play a snowball game. It has no accounts and runs on Cloudflare Workers. We wanted real-time presence without running a game server, and without storing more than a village needs. A Durable Object per village turned out to fit that well.</p>
+
+<h2>One object per village code</h2>
+<p>A village is a group of up to 20 friends, identified by a six-character code. The Worker entry handles the WebSocket upgrade at <code>/api/village/ws</code>. It checks the Origin header, checks the shape of the code, and confirms in the database that the village exists and has not expired. Only then does it forward the request to a Durable Object whose id is derived from the code:</p>
+<pre><code>const stub = env.VILLAGE.get(env.VILLAGE.idFromName(code));
+return stub.fetch(request);</code></pre>
+<p>Everyone in the same village therefore reaches the same object, wherever they connect from, and a village that nobody is visiting costs nothing. The object uses WebSocket Hibernation, so idle connections do not keep it running. It caps itself at 20 sockets, the same as the village's lot count.</p>
+
+<h2>What the object stores, and what it does not</h2>
+<p>People exist only in their socket's attachment: a small record holding the walker's name, look and position. Nothing about who is in the village is written to storage, so a restart simply means everyone reconnects.</p>
+<p>Durable storage holds just two things that must outlive a restart: open snowball rooms and lit campfires. A campfire stores when it burns out, and an alarm puts it out after ten minutes. The ids of bell duels in progress are also tracked, so that stakes can be refunded if the object disappears mid-game.</p>
+<p>Coins, avatar looks and the list of houses someone has visited live in the browser's localStorage only. Our server keeps a separate, small play-money wallet keyed by a hashed device key, but the hub never needs the browser's inventory to relay positions.</p>
+
+<h2>No free text</h2>
+<p>Real-time social features invite moderation work, so we removed the thing that causes it. People cannot send messages in the village. A greeting is a value from a fixed enum (hearts, a wave, "Merry Christmas" and so on), and the server accepts a message only if it is one of those values:</p>
+<pre><code>export const isGreeting = (v: unknown): v is Greeting =&gt;
+  typeof v === "string" &amp;&amp; (Object.values(Greeting) as string[]).includes(v);</code></pre>
+<p>Greetings are also spaced by a minimum gap of 1.2 seconds per person. The one piece of text a visitor supplies is a display name of at most ten characters, cleaned and checked against a blocked-word list when they join. Sitting at a campfire or on the plaza sofa sends no message at all: the sitter stands exactly on the seat spot, and every client draws anyone standing at a seat as seated.</p>
+<p>Each socket also has token buckets. Ordinary messages get 40 per second with a burst of 80; messages that write storage, query the database or notify everyone get 1.5 per second with a burst of 5.</p>
+
+<h2>The snowball arena: the server runs the game</h2>
+<p>The arena holds two to eight people on one square field with snow walls. The client is not trusted with the outcome. Each client sends where it is standing and which way it faces, at about 12 times a second. The server runs the simulation, the same class that the browser uses for practice against bots, so a throw and a hit are judged by one set of rules in both places.</p>
+<ul>
+<li>A reported position is accepted only as far as the player could have walked since their last one, with a small allowance for network jitter. A teleport request moves you at most your walking budget.</li>
+<li>Throws need ammunition and a minimum gap between them, and a hit freezes the target for a short time.</li>
+<li>The object steps the match 30 times a second and sends the state, meaning player positions, snowballs in flight and hits, at 15 times a second, or immediately when a hit happens.</li>
+</ul>
+<pre><code>const hits = match.sim.step(TICK_MS / 1000, now);
+if (hits.length &gt; 0 || now - match.sentAt &gt;= 1000 / ARENA.sendHz) {
+  // send ArenaState to every member
+}</code></pre>
+<p>Because a client can be a little behind the server, a player who keeps walking would be pulled back by every update. The client therefore keeps a short trail of the positions it sent, and only snaps to the server's position when that position matches none of them. That distinguishes lag from a real correction, such as a wall or a freeze.</p>
+<p>The timer runs only while a match is in progress and is cleared when the last one ends, which lets the object sleep again. Bell duels go through the same arena for two players, with the stakes held in the database while the match runs and paid out once by the server.</p>

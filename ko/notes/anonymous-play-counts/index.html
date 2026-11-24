@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>아무도 추적하지 않고 브라우저 게임 플레이 수 세기 · catchmeif404</title>
+  <meta name="description" content="마스크맨이 이벤트 이름 enum과 Durable Object 표 하나로 방문과 대전을 세고, 무료 요청 한도를 위해 이벤트를 묶어 보내는 방법이에요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/anonymous-play-counts/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/anonymous-play-counts/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/anonymous-play-counts/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/anonymous-play-counts/">
+  <meta property="og:title" content="아무도 추적하지 않고 브라우저 게임 플레이 수 세기">
+  <meta property="og:description" content="마스크맨이 이벤트 이름 enum과 Durable Object 표 하나로 방문과 대전을 세고, 무료 요청 한도를 위해 이벤트를 묶어 보내는 방법이에요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/anonymous-play-counts/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "아무도 추적하지 않고 브라우저 게임 플레이 수 세기", "description": "마스크맨이 이벤트 이름 enum과 Durable Object 표 하나로 방문과 대전을 세고, 무료 요청 한도를 위해 이벤트를 묶어 보내는 방법이에요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/anonymous-play-counts/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/anonymous-play-counts/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">Maskman</span></p>
+      <h1>아무도 추적하지 않고 브라우저 게임 플레이 수 세기</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>마스크맨을 누가 하는지, 어떤 모드를 쓰는지, 로그라이크에서 어디까지 가는지는 알고 싶었어요. 그렇다고 플레이어 개인의 기록을 쌓고 싶지는 않았어요. 그래서 하루 단위로 이벤트 횟수만 세고, 누가 일으켰는지는 아무것도 저장하지 않는 방식으로 정했어요.</p>
+
+<h2>이벤트는 enum이고, 서버도 enum만 알아요</h2>
+<p>게임과 Worker는 <code>src/net/stats.ts</code> 파일 하나를 같이 써요. 여기에 모든 이벤트가 <code>StatKey</code>의 멤버로 정의돼 있어요.</p>
+<pre><code>export enum StatKey {
+  VisitNew = 'visit.new',
+  VisitSameDay = 'visit.sameday',
+  MatchOnline = 'match.online',
+  MatchRogue = 'match.rogue',
+  RogueStart = 'rogue.start',
+  RogueWon = 'rogue.won',
+  // ...
+}</code></pre>
+<p>Worker는 멤버가 아닌 값을 받지 않아요. 지어낸 키, 자유 입력 칸, 아이디를 실어 보내도 아무것도 더해지지 않아요. 키가 다루는 건 방문(이 기기의 첫 방문, 같은 날 또 방문, 다음 날, 일주일 안, 그 뒤), 언어, 터치와 PC, 모드별 대전 시작 수, 로그라이크 시작과 끝난 막, 머문 시간 구간, 첫 화면에서 누른 버튼, 버그 신고 버튼 클릭이에요. 새 이벤트는 enum 맨 뒤에 추가하는 것으로만 늘려요.</p>
+
+<h2>무엇을 저장하나요</h2>
+<p><code>Stats</code>라는 Durable Object 하나가 SQLite 표 하나를 들고 있어요.</p>
+<pre><code>CREATE TABLE IF NOT EXISTS counts (
+  day TEXT NOT NULL, key TEXT NOT NULL, n INTEGER NOT NULL,
+  PRIMARY KEY (day, key))</code></pre>
+<p>이벤트가 오면 <code>INSERT ... ON CONFLICT(day, key) DO UPDATE SET n = n + excluded.n</code>으로 한 행에 더해요. 날짜는 한국 시간 기준이에요. 우리가 숫자를 한국 시간으로 읽기 때문이에요. 공개 엔드포인트 <code>/api/stats?days=N</code>은 하루별 합계를 돌려주고, 최대 90일까지예요.</p>
+<p>이 표에 없는 것도 분명해요. 플레이어 아이디, IP 주소, 쿠키, 하루보다 잘게 쪼갠 시각이 없어요. 요청에서 적어 두는 건 키 이름과 횟수뿐이에요. 그래서 "어떤 방문자가 다시 왔나" 같은 질문에는 이 표로 답할 수 없어요.</p>
+
+<h2>아이디 없이 재방문 알기</h2>
+<p>사람들이 다시 오는지는 알고 싶었어요. 이건 브라우저가 기기 안에서 계산해요. 첫 방문 때 오늘 날짜를 <code>localStorage</code>에 저장해 두고, 다음에 열 때 그 날짜와 오늘을 비교해서 <code>visit.d1</code>, <code>visit.d2_7</code> 같은 구간 이름만 보내요. 서버는 그 날짜를 모르고, 두 방문을 이어 줄 값도 받지 않아요. 저장소가 막혀 있으면 새 방문으로 세요.</p>
+
+<h2>무료 요청 한도를 위해 묶어 보내기</h2>
+<p>처음에는 이벤트 하나마다 요청 하나를 보냈어요. 한 번 방문해서 열 판을 하면 요청이 열 번이 넘었어요. Cloudflare Workers 무료 플랜에는 하루 요청 한도가 있고, 같은 Worker가 게임 파일과 대전 방도 같이 맡고 있어서 집계가 그 한도를 갉아먹는 건 피하고 싶었어요.</p>
+<p>v1.32부터는 페이지가 이벤트를 메모리에서 세어 두었다가 한꺼번에 보내요.</p>
+<pre><code>export function track(key: StatKey): void {
+  pending.set(key, Math.min(MAX_STAT_COUNT, (pending.get(key) ?? 0) + 1));
+  held += 1;
+  if (held &gt;= FLUSH_AT) flush();
+}</code></pre>
+<p>방문 정보(종류, 언어, 기기)는 로드할 때 한 번 보내요. 나머지는 페이지가 숨겨지거나 닫힐 때까지 기다렸다가 <code>{"c": {"match.cpu": 3, "rogue.start": 1}}</code> 같은 본문 하나로 나가요. 그래서 판 수와 상관없이 방문 한 번에 요청이 약 두 번이에요. 한 세션이 아주 오래 열려 있으면 쌓인 이벤트가 60개가 될 때 보내고, 요청 하나가 키 하나에 더할 수 있는 값은 최대 500이에요.</p>
+<p>전송은 가능하면 <code>navigator.sendBeacon</code>을 써서 탭을 닫아도 취소되지 않게 하고, 안 되면 <code>keepalive</code>를 준 <code>fetch</code>를 써요. 실패는 일부러 무시해요. 집계가 게임을 방해하면 안 되기 때문이에요. 업데이트 전에 열어 둔 페이지는 키당 한 번씩 보내는 예전 형식을 계속 보내서, Worker는 그 형식도 아직 받아요.</p>
+
+<h2>이 방식의 한계</h2>
+<p>합계만 세기 때문에 못 하는 일이 있어요. 한 명이 많이 한 건지 여러 명이 조금씩 한 건지 구분하지 못하고, 사람과 봇도 나누지 못해요. 탭을 갑자기 닫으면 마지막 묶음이 사라질 수 있어요. 키는 손으로 추가하고, 숫자를 보고서로 옮기는 곳마다 새 키의 칸도 따로 만들어야 해요. 그 대신 새어 나갈 플레이어 정보가 없고, 표 전체를 한눈에 읽을 수 있을 만큼 작아요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/verify-the-deploy-not-the-readme/"><span class="tag">Deploy</span><span class="card-title">README가 아니라 배포를 확인해요</span><span class="card-desc">문서에는 푸시하면 사이트가 배포된다고 적혀 있었지만 Cloudflare Pages 연결은 없었어요. 그 뒤로 배포를 확인하는 방식이 바뀐 이야기예요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/tuning-bosses-with-a-bot/"><span class="tag">Maskman</span><span class="card-title">CPU가 직접 플레이해서 로그라이크 보스 난이도 맞추기</span><span class="card-desc">CPU가 마스크맨 로그라이크를 36판 돌려 첫 보스가 벽이라는 걸 보여 줬고 v1.24.1에서 조정했어요. 봇 밸런싱이 알려 주는 것과 못 알려 주는 것을 정리했어요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/secret-santa-without-login/"><span class="tag">SantaPick</span><span class="card-title">로그인 없이 마니또 돌리기</span><span class="card-desc">산타픽이 가입 없이 마니또를 돌리는 방법: 참가 코드와 개인 링크, 해시로만 저장하는 토큰, 공개 전에는 산타를 보내지 않는 규칙이에요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

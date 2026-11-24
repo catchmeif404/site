@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>How the Secret Santa draw works · catchmeif404</title>
+  <meta name="description" content="The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/secret-santa-draw-algorithm/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <meta property="og:title" content="How the Secret Santa draw works">
+  <meta property="og:description" content="The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/secret-santa-draw-algorithm/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "How the Secret Santa draw works", "description": "The SantaPick draw gives everyone one receiver, never themselves, honors do-not-pair rules, and reports honestly when no valid draw exists.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/secret-santa-draw-algorithm/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/secret-santa-draw-algorithm/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">SantaPick</span></p>
+      <h1>How the Secret Santa draw works</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>A Secret Santa draw sounds like shuffling names, but the requirements add up quickly. Everyone gives to exactly one person and receives from exactly one person. Nobody draws themselves. The host can mark pairs of people who must not draw each other, such as a couple or two people who already know each other's tastes. And if the rules cannot be satisfied, the host needs to hear that instead of waiting on a request that never ends. The whole thing is one pure function, <code>drawPairs</code>, in <code>src/lib/draw.ts</code>.</p>
+
+<h2>Inputs and rules</h2>
+<p>The function takes a list of participant ids, a list of excluded pairs, and an optional random number generator. In production we pass one built on <code>crypto.getRandomValues</code>; in tests the default is fine. It returns either a list of <code>giver, receiver</code> pairs or <code>{ ok: false }</code>.</p>
+<p>Exclusions are symmetric: the host says "A and B must not meet", and that bans both A giving to B and B giving to A. We store each pair under a key built from the two ids in sorted order, so a lookup works in either direction.</p>
+<pre><code>function key(a: string, b: string): string {
+  return a &lt; b ? `${a}|${b}` : `${b}|${a}`;
+}
+const allowed = (g: string, r: string) =&gt; g !== r &amp;&amp; !banned.has(key(g, r));</code></pre>
+<p>A room needs at least three people to be drawn (the room limits are 3 to 50), and the function itself returns failure for fewer than two.</p>
+
+<h2>First try: one big cycle</h2>
+<p>The first strategy is to shuffle everyone into a line and have each person give to the next, with the last person giving to the first. That produces a single cycle: A gives to B, B to C, and so on back to A. A single cycle is a valid draw whenever every neighbouring pair is allowed, and it has a useful property for a game about guessing. With several small loops, someone who works out that they and their receiver swapped gifts, or that a three-person loop closed, learns far more than they should. One long cycle gives no such shortcut.</p>
+<p>We try this up to 400 times. A random cycle fails only if some neighbouring pair is banned, so rooms with few or no exclusions usually succeed early.</p>
+
+<h2>Detecting impossible rooms</h2>
+<p>If 400 shuffles fail, the setup is either tight or impossible. We check the cheap impossible cases first. If anyone has nobody they are allowed to give to, or nobody allowed to give to them, no draw exists:</p>
+<pre><code>for (const id of ids) {
+  if (!ids.some((o) =&gt; allowed(id, o)) || !ids.some((o) =&gt; allowed(o, id))) return { ok: false };
+}</code></pre>
+<p>The simplest example in the tests is three people where the first is excluded from both others. The test for a person excluded from everyone, in a room of fourteen, also asserts that the answer comes back in under 200 milliseconds.</p>
+<p>That check does not catch every impossible input, because a conflict can involve several people at once even when each one has an option on their own. For the rest we fall back to a backtracking search that allows any valid assignment, not just a single cycle. It orders givers by how few options they have, so the most constrained person is placed first, and tries receivers in random order. It also counts nodes explored and gives up after 20,000, so a hard or impossible input cannot hang the request.</p>
+<p>That limit is a deliberate trade. If the search stops at the cap we report the draw as impossible, even though in some very tight setups a solution could exist that we did not reach. In both cases the host gets a draw-impossible error and the next step is the same: change the exclusions.</p>
+
+<h2>Committing the result safely</h2>
+<p>The draw function only computes pairs. Writing them is a separate step that must not be fooled by a concurrent change. <code>runDraw</code> writes everything in one batch: the first statement closes the room only if it is still open and still has exactly the number of people we drew for, and each assignment insert runs only if the previous statement changed a row (SQLite's <code>changes()</code>). If someone joins between reading the participants and writing the pairs, the close changes nothing, and so nothing else is written. The host gets a "room closed" answer and can try again.</p>
+
+<h2>How it is tested</h2>
+<p>The tests in <code>draw.test.ts</code> run the function many times, since the result is random:</p>
+<ul>
+<li>200 runs with eight people check that everyone appears once as giver and once as receiver, and that nobody draws themselves;</li>
+<li>200 runs with three exclusions check that no pair appears in either direction;</li>
+<li>the three-person minimum works;</li>
+<li>impossible setups return <code>ok: false</code>, including a single person;</li>
+<li>a person excluded from everyone fails fast;</li>
+<li>a tight case: on a ring of eight where only neighbours may meet, the only valid draws are the two directions around the ring. A random shuffle rarely lands on one of them, so the backtracking path has to find it. The test asserts it solves this 20 times in a row.</li>
+</ul>
+<p>The last test is the one that matters most to us. It is easy to write a draw that works for rooms with no rules and quietly fails for the rooms that need it.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/realtime-village-durable-object/"><span class="tag">SantaPick</span><span class="card-title">A real-time village on Durable Objects</span><span class="card-desc">How SantaPick&#x27;s village runs on Cloudflare: one Durable Object per village code, little stored state, enum greetings and a server-run snowball arena.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/rate-limits-without-storing-ips/"><span class="tag">SantaPick</span><span class="card-title">Rate limits without storing IP addresses</span><span class="card-desc">How SantaPick limits spam on a site with no login: hashed per-hour counters, one atomic upsert, random device keys, and a visit counter with no limit.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">A Railway deploy checklist from real failures</span><span class="card-desc">Five Railway mistakes that cost us debugging time, each with the symptom you will see and the fix that worked, from service names to unapplied variables.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

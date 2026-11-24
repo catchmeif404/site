@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>IP를 저장하지 않는 요청 제한 · catchmeif404</title>
+  <meta name="description" content="로그인 없는 사이트에서 산타픽이 스팸을 막는 방법이에요. 해시한 시간대별 카운터, 한 문장 upsert, 기기 키, 제한 없는 방문 카운터를 다뤄요.">
+  <link rel="canonical" href="https://catchmeif404.com/ko/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/rate-limits-without-storing-ips/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/rate-limits-without-storing-ips/">
+  <meta property="og:title" content="IP를 저장하지 않는 요청 제한">
+  <meta property="og:description" content="로그인 없는 사이트에서 산타픽이 스팸을 막는 방법이에요. 해시한 시간대별 카운터, 한 문장 upsert, 기기 키, 제한 없는 방문 카운터를 다뤄요.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/ko/notes/rate-limits-without-storing-ips/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "IP를 저장하지 않는 요청 제한", "description": "로그인 없는 사이트에서 산타픽이 스팸을 막는 방법이에요. 해시한 시간대별 카운터, 한 문장 upsert, 기기 키, 제한 없는 방문 카운터를 다뤄요.", "datePublished": "2026-11-24", "inLanguage": "ko", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/ko/notes/rate-limits-without-storing-ips/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="글"><a href="/">제품</a><a href="/ko/notes/" aria-current="page">글</a><a href="/ko/about/">소개</a></nav>
+      <a class="bar-lang" href="/notes/rate-limits-without-storing-ips/" lang="en" hreflang="en">English</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/ko/notes/">글 목록</a><span class="tag">SantaPick</span></p>
+      <h1>IP를 저장하지 않는 요청 제한</h1>
+      <p class="meta">작성 <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>계정이 없는 사이트에는 악용을 막을 손잡이가 마땅치 않아요. 누구나 스크립트가 보내는 속도만큼 방이나 마을, 편지를 만들 수 있고, 차단할 사용자도 없어요. 보통은 IP 주소로 제한하지만 그러려면 IP 주소를 보관해야 해요. 방문자에 대한 정보를 이유 없이 갖고 싶지는 않았어요. 이 글은 산타픽에서 대신 한 일과, 일부러 제한을 두지 않은 곳을 다뤄요.</p>
+
+<h2>해시를 키로 쓰는 시간당 카운터</h2>
+<p>만들기 요청(방, 꾸민 방, 커플 퀴즈, 마을, 마을 입장, 테스트 결과 저장)은 네트워크별로 시간당 횟수를 제한해요. 서버는 주소 자체를 저장하지 않아요. 토큰에 쓰는 것과 같은 SHA-256 함수로 <code>ip:&lt;주소&gt;</code> 문자열을 해시해서 그 값만 저장해요.</p>
+<pre><code>export const ipHashOf = (request: Request) =&gt;
+  hashToken(`ip:${request.headers.get("cf-connecting-ip") ?? "local"}`);</code></pre>
+<p>카운터 테이블은 버킷, IP 해시, UTC 시각 단위로 한 행이에요.</p>
+<pre><code>CREATE TABLE rate_limits (
+  bucket TEXT NOT NULL,
+  ip_hash TEXT NOT NULL,
+  hour TEXT NOT NULL,   -- YYYY-MM-DDTHH (UTC)
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket, ip_hash, hour)
+);</code></pre>
+<p>한도는 상수 객체 하나에 모여 있어요. 시간당 방 30개, 꾸민 방 30개, 커플 퀴즈 30개, 마을 20개, 마을 입장 60번, 테스트 결과 60번이에요. 스크립트를 막으려는 숫자이지, 한 집이나 한 사무실이 주소 하나를 같이 써서 불편하게 하려는 숫자가 아니에요.</p>
+
+<h2>한 문장이라 경합이 없어요</h2>
+<p>단순한 방식은 횟수를 읽고, 한도와 비교하고, 새 횟수를 쓰는 거예요. 그러면 동시에 들어온 두 요청이 둘 다 29를 읽고 둘 다 통과해요. 그래서 확인과 증가를 같은 문장으로 합쳤어요.</p>
+<pre><code>INSERT INTO rate_limits (bucket, ip_hash, hour, n) VALUES (?, ?, ?, 1)
+ON CONFLICT (bucket, ip_hash, hour) DO UPDATE SET n = n + 1 WHERE n &lt; ?</code></pre>
+<p>그 시간의 첫 요청은 1이 든 행을 넣어요. 다음 요청부터는 충돌이 나서 행을 갱신하는데, <code>n</code>이 한도보다 작을 때만 갱신해요. 한도에 닿으면 <code>WHERE</code> 때문에 아무 행도 바뀌지 않아요. 코드는 결과에서 바뀐 행 수를 읽어서, 1이면 세어졌으니 계속 진행하고 0이면 429로 거절해요. 데이터베이스가 이 한 문장을 순서대로 처리하니까 동시 요청이 한도 아래로 함께 끼어들 수 없어요.</p>
+
+<h2>나머지는 기기 키로 해요</h2>
+<p>어떤 제한은 네트워크가 아니라 기기 기준이에요. 브라우저가 무작위 키를 만들어 로컬에 두고, 서버는 그 키도 저장하지 않고 해시만 저장해요. 마을과 집은 이 키로 기기당 하나씩만 만들게 하고, 벨(판매하지 않는 놀이용 재화)은 키의 해시 아래 지갑을 두며, 꾸민 방의 편지는 방 id와 키를 함께 해시해서 방문자당 방마다 한 통으로 제한해요.</p>
+<p>이런 키는 버리기 쉬워서 보안 경계가 아니라 편의를 위한 제한이에요. 중요한 곳에서는 네트워크 제한과 함께 써요. 예를 들어 후원 카드 보상은 하루 세 번까지이고 최소 15초 재생을 서버에서 확인하며, 네트워크당 하루에 새로 만드는 지갑 수도 제한해요. 이 마지막 한도는 일부러 느슨하게 잡았어요. 모바일 망은 여러 사람이 주소를 나눠 쓰기 때문이에요.</p>
+
+<h2>무엇을 언제 지우나요</h2>
+<p>카운터 행은 그 시간 동안만 쓸모가 있어요. 매일 03:00(KST)에 도는 작업이 오늘보다 앞선 rate-limit 행을, 만료된 방과 마을 및 그 안의 모든 데이터와 함께 지워요. 방은 교환일 30일 뒤까지 보관해요. 일부 IP 해시는 카운터보다 오래 남는데, 그 해시가 필요한 행에 붙어 있어서예요. 꾸민 방의 편지와 편지 신고는 네트워크별 편지 한도와 신고 중복 방지를 위해 하나씩 갖고, 지갑은 새 지갑 한도를 위해 하나를 가져요. 행이 지워질 때 함께 사라져요.</p>
+
+<h2>제한이 없는 카운터</h2>
+<p>방문 카운터는 예외예요. 방문은 한 탭의 첫 페이지 로드이고, 이 엔드포인트는 하루 합계에 1을 더해요. 우리 사이트에서 보낸 POST여야 한다는 것이 유일한 검사예요. IP별 제한은 일부러 넣지 않았어요. 방문을 제한하려면 아무것도 만들지 않은 사람까지 포함해 모든 방문자의 IP 해시를 써야 하는데, 개인정보처리방침이 그걸 다루지 않기 때문이에요. 대가는 스크립트가 숫자를 부풀릴 수 있다는 점이에요. 이건 받아들였어요. 이 숫자는 우리가 규모를 가늠하는 용도이고 아무것도 이 값에 기대지 않아요. 웃어넘길 수 있는 숫자가, 페이지를 본 모든 사람의 기록보다 싸요.</p>
+    </article>
+    <section class="more"><h2>다른 글</h2>
+    <ul class="cards">
+      <li class="card"><a href="/ko/notes/railway-deploy-checklist/"><span class="tag">Deploy</span><span class="card-title">실패에서 나온 Railway 배포 체크리스트</span><span class="card-desc">서비스 이름부터 적용되지 않은 변수까지, 디버깅에 시간을 쓰게 만든 Railway 실수 다섯 가지를 증상과 해결 방법으로 정리했어요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/p2p-fighting-game-latency/"><span class="tag">Maskman</span><span class="card-title">브라우저 격투 게임을 서버 중계에서 P2P로 옮긴 이유</span><span class="card-desc">한국에서 서버 중계 입력이 0.33~1.4초 걸려, 마스크맨은 대전 입력을 WebRTC로 직접 보내고 방 서버는 연결만 맡아요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/ko/notes/nightshift-builder-and-reviewer/"><span class="tag">nightshift</span><span class="card-title">nightshift: 한 모델이 만들고 다른 모델이 검토해요</span><span class="card-desc">nightshift는 보드의 티켓마다 한 모델이 브랜치에서 구현하고 다른 모델이 검토하는 오픈소스 러너예요. 사람이 정할 일은 사람에게 남겨요.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/ko/notes/">글</a>
+        <a href="/ko/about/">소개</a>
+        <a href="/ko/privacy/">개인정보처리방침</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

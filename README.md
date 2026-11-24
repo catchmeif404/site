@@ -23,6 +23,9 @@ home.css     # homepage tokens, layout, motion
 home.js      # EN/KO switch, product detail overlay
 figdex/      # figdex info + privacy pages (Google OAuth verification)
 assets/      # logo, figdex and maskman icons and screenshots
+content/     # sources of the notes, about and privacy pages (HTML fragments, EN + KO)
+tools/build_notes.py  # builds notes/, about/, privacy/, ko/, sitemap.xml, robots.txt from content/
+notes.css    # styles of those pages
 ```
 
 To add a product, copy a rack section in `index.html`, give it an `id`, update the nav link and the

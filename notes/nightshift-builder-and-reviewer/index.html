@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-adsense-account" content="ca-pub-6944124131865180">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944124131865180" crossorigin="anonymous"></script>
+  <title>nightshift: one model builds, another reviews · catchmeif404</title>
+  <meta name="description" content="nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.">
+  <link rel="canonical" href="https://catchmeif404.com/notes/nightshift-builder-and-reviewer/">
+  <link rel="alternate" hreflang="en" href="https://catchmeif404.com/notes/nightshift-builder-and-reviewer/">
+  <link rel="alternate" hreflang="ko" href="https://catchmeif404.com/ko/notes/nightshift-builder-and-reviewer/">
+  <link rel="alternate" hreflang="x-default" href="https://catchmeif404.com/notes/nightshift-builder-and-reviewer/">
+  <meta property="og:title" content="nightshift: one model builds, another reviews">
+  <meta property="og:description" content="nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://catchmeif404.com/notes/nightshift-builder-and-reviewer/">
+  <meta property="og:site_name" content="catchmeif404">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/notes.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "nightshift: one model builds, another reviews", "description": "nightshift is an open-source runner that takes tickets from a board, builds each on its own branch with one model, and has another review it.", "datePublished": "2026-11-24", "inLanguage": "en", "author": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "publisher": {"@type": "Organization", "name": "catchmeif404", "url": "https://catchmeif404.com"}, "mainEntityOfPage": "https://catchmeif404.com/notes/nightshift-builder-and-reviewer/"}</script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="bar-logo" href="/" aria-label="catchmeif404"><img src="/assets/logo-404.png" alt="" width="40" height="40"><span>catchmeif404</span></a>
+      <nav class="bar-nav" aria-label="Notes"><a href="/">Products</a><a href="/notes/" aria-current="page">Notes</a><a href="/about/">About</a></nav>
+      <a class="bar-lang" href="/ko/notes/nightshift-builder-and-reviewer/" lang="ko" hreflang="ko">한국어</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <article class="note">
+      <p class="crumb"><a href="/notes/">All notes</a><span class="tag">nightshift</span></p>
+      <h1>nightshift: one model builds, another reviews</h1>
+      <p class="meta">Published <time datetime="2026-11-24">2026-11-24</time> · catchmeif404</p>
+<p>Letting a coding agent work while nobody is watching goes wrong in boring ways. It edits your checkout, it reports success without having written the result anywhere, it dies when the laptop sleeps, or it merges something that touches money. nightshift is the small part around the agents that handles those cases. It is open source under the MIT license, published on npm as <code>@catchmeif404/nightshift</code>, with the source at <a href="https://github.com/catchmeif404/nightshift">github.com/catchmeif404/nightshift</a>. The README calls its status early (0.1).</p>
+
+<h2>What it is, and what it is not</h2>
+<p>nightshift is an unattended development queue that runs on your own machine. You put tickets on a board. For each ticket it starts a developer run of a coding agent, by default Claude Code <code>sonnet</code> (Codex is supported too), which builds the change on its own branch. It then starts a separate reviewer run, by default <code>opus</code>, that checks the work. The reviewer fixes small things, sends larger ones back for another round, and stops anything that needs a human.</p>
+<p>nightshift writes no code itself. The agents build and review. nightshift picks the next ticket, gives each one its own git worktree, starts and resumes the agent runs, accepts a result only from the file the run must write, sends work back for rework, merges what passed if you allow it, and keeps the ticket up to date. The model that wrote the code is never the one that approves it.</p>
+
+<h2>Boards</h2>
+<p>A board is where tickets live. The README lists these types:</p>
+<ul>
+<li><code>local-md</code>, the default: a folder of markdown files in <code>.tickets/</code>.</li>
+<li><code>github</code>: GitHub Issues, using <code>nightshift:*</code> labels such as <code>nightshift:ready</code>. Only issues opened by <code>trustedAuthors</code> are picked up, because an issue is a prompt.</li>
+<li><code>notion</code>: a Notion database, with property and status names configurable.</li>
+<li><code>command</code>: any tracker, through a small executable that implements <code>list</code>, <code>set-status</code> and <code>note</code>, so Linear, Jira or a spreadsheet can act as the board.</li>
+</ul>
+
+<h2>From ticket to merged pull request</h2>
+<p>The quick start is four commands:</p>
+<pre><code>npm install -g @catchmeif404/nightshift
+nightshift init --repo-path ~/code/my-app
+nightshift add "Add a slugify helper" --project my-app
+nightshift run</code></pre>
+<p>A ticket then moves like this. A worker takes a ready ticket for its project, with one worker per project and a few projects at once. The build stage runs in a fresh worktree and must end by writing one line to a result file: <code>PR &lt;url&gt;</code>, <code>BRANCH &lt;name&gt;</code> or <code>BLOCKED &lt;why&gt;</code>. The review stage runs the tests and writes <code>PASS</code>, <code>REWORK</code>, <code>NEEDS_HUMAN</code> or <code>BLOCKED</code>. On <code>REWORK</code> the builder runs again with the review notes and the reviewer looks once more; <code>maxRework</code> defaults to 1.</p>
+<p>On <code>PASS</code> the ticket goes to <code>review</code> for you to merge. With <code>autoMerge</code> on, nightshift merges the pull request itself and the ticket becomes <code>done</code>. <code>autoMerge</code> is off by default. With <code>publish: "pr"</code> the branch is pushed and a pull request is opened; with <code>"branch"</code> the work waits on a local branch such as <code>nightshift/t-1</code>.</p>
+
+<h2>Human gates</h2>
+<p>Some changes should not be merged by a model. <code>humanGates</code> defaults to all five: <code>money</code>, <code>legal</code>, <code>destructive-data</code>, <code>outward-facing</code> and <code>product-direction</code>. When a change touches one, the reviewer answers <code>NEEDS_HUMAN</code>, writes what you must decide, and the ticket goes to <code>blocked</code>. A ticket that changes a price is the example the getting-started guide uses. Separately, <code>gatePaths</code> takes globs such as <code>db/migration/**</code>: if the change touches a matching file, a passing review becomes <code>NEEDS_HUMAN</code> even with <code>autoMerge</code> on.</p>
+
+<h2>Why a run survives a bad night</h2>
+<ul>
+<li><strong>Files, not claims.</strong> A stage counts as done only when it writes its result file in the expected format. A result it cannot read is set aside and the stage runs again.</li>
+<li><strong>Cut-off runs resume.</strong> Each stage has a fixed session id, so after a reboot the next dispatch resumes the same session. After 3 cut-offs (<code>maxStageTries</code>) the ticket is blocked with the last log line as the reason.</li>
+<li><strong>Usage limits wait.</strong> When the agent reports a limit with a reset time, nightshift does not count it as a try and resumes after the reset.</li>
+<li><strong>Your checkout is untouched.</strong> Every ticket works in its own worktree and branch.</li>
+</ul>
+<p>The README reports one measurement from our own use: its bash predecessor took 225 tickets through build and review in the first 12 days, and 84% passed review on the first round. That pass is the AI reviewer's verdict, not a human's, and the README says so.</p>
+<p>It needs Node 20 or newer, git and a signed-in Claude Code CLI. Because it runs agents that can edit files and run commands, the README advises a machine and repositories where that is acceptable, <code>autoMerge</code> off until you trust it, and a short <code>trustedAuthors</code> list.</p>
+    </article>
+    <section class="more"><h2>More notes</h2>
+    <ul class="cards">
+      <li class="card"><a href="/notes/mobile-app-version-gate/"><span class="tag">figdex</span><span class="card-title">A version gate for old mobile app builds</span><span class="card-desc">figdex&#x27;s backend serves a minimum and a latest app version so old builds can be asked to update, and latest is raised only once the store has the build.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deterministic-simulation-rules/"><span class="tag">Maskman</span><span class="card-title">Keeping a fighting game simulation deterministic across browsers</span><span class="card-desc">Two Maskman players only exchange button bits, so both browsers must compute the same fight; these are the rules, the hash check and the tests that enforce it.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+      <li class="card"><a href="/notes/deploy-on-tags-not-on-main/"><span class="tag">Deploy</span><span class="card-title">Deploy on tags, not on main</span><span class="card-desc">Why a push to main no longer ships our products, and how a single vX.Y.Z tag now deploys the frontend and the backend together.</span><time datetime="2026-11-24">2026-11-24</time></a></li>
+    </ul></section>
+  </main>
+  <footer class="foot">
+    <div class="foot-row">
+      <span>© 2026 catchmeif404</span>
+      <span class="foot-links">
+        <a href="/notes/">Notes</a>
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="https://github.com/catchmeif404">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>
