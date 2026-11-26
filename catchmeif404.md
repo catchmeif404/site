@@ -29,8 +29,8 @@ catchmeif404 product showroom. The anonymous-developer case-file persona is reti
   from the game's dev server with headless Chrome).
   `assets/santapick/icon.png` + `assets/santapick/{village,dress,challenge,room,test,home}.jpg` (720x1560, 2x phone captures
   of the local dev server with headless Chrome over CDP; test walkers and a test room, no real users).
-  The figdex screenshots are QA captures that show test accounts. Replace them with clean captures
-  before release.
+  The figdex screenshots (replaced 2026-11-26) are captures of app 0.8.4 against a local server with demo accounts;
+  the figure photos in them are free-licence Unsplash photos (ids in `~/development-personal/figdex-store/posters-ko-v2/SOURCES.md`).
 - Adding a product: copy a rack section, give it an `id`, update the nav link and the rack index
   number, put screenshots under `assets/<product>/`, and set `data-frame`: `phone` (portrait app shots, `.frame--phone`) or `screen` (16:9 web game shots,
   `.frame--screen`). The detail overlay copies the rack's frame (`#detail-frame` in home.js).
